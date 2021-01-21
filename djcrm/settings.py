@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = "leads.User"  # App name . User model class name
 
 # Application definition
 
