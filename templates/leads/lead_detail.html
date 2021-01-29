@@ -1,37 +1,20 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
 
-<html lang="en">
+{% block content %}
+<a href={% url "leads:lead_list" %}>Go Back</a>
+<h1>This is Lead Detial View</h1>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leads CRM</title>
-    <style>
-        .lead {
-            padding: 10px 6px;
-            margin-top: 5px;
-            background-color: #f6f6f6;
-            width: 100%;
-        }
-    </style>
-</head>
+<p>The Details of {{lead.first_name}} are: </p>
+<ul>
+    <li class="lead">{{lead.first_name}}</li>
+    <li class="lead">{{lead.last_name}}</li>
+    <li class="lead">{{lead.age}}</li>
+    <li class="lead">{{lead.agent}}</li>
+</ul>
 
-<body>
-    <a href={% url "leads:lead_list" %}>Go Back</a>
-    <h1>This is Lead Detial View</h1>
+<hr>
 
-    <p>The Details of {{lead.first_name}} are: </p>
-    <ul>
-        <li class="lead">{{lead.first_name}}</li>
-        <li class="lead">{{lead.last_name}}</li>
-        <li class="lead">{{lead.age}}</li>
-        <li class="lead">{{lead.agent}}</li>
-    </ul>
+<a href="{% url 'leads:lead_update' pk=lead.id %}">Update</a>
+<a href="{% url 'leads:lead_delete' pk=lead.id %}">Delete</a>
 
-    <hr>
-
-    <a href="{% url 'leads:lead_update' pk=lead.id %}">Update</a>
-    <a href="{% url 'leads:lead_delete' pk=lead.id %}">Delete</a>
-</body>
-
-</html>
+{% endblock content %}
