@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from .models import Lead, Agent
@@ -105,6 +106,13 @@ def lead_create(request):
             print(form.cleaned_data)
 
             form.save()
+
+            send_mail(
+                subject="Lead Created",
+                message="Visit homepage to see new lead",
+                from_email="test@test.com",
+                recipient_list=["test2@test.com"],
+            )
 
             return redirect("/leads")
 
