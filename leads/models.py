@@ -9,9 +9,24 @@ class User(AbstractUser):
     pass
 
 
+class UserProfile(models.Model):
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.user.username
+
+    class Meta:
+        db_table = ""
+        managed = True
+        verbose_name = "UserProfile"
+        verbose_name_plural = "UserProfiles"
+
+
 class Agent(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    organisation = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user.username

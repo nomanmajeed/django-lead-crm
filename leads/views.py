@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.views import generic
@@ -13,6 +15,7 @@ def landing_page(request):
     return render(request, "landing_page.html")
 
 
+@login_required
 def lead_list(request):
 
     leads = Lead.objects.all()
@@ -21,6 +24,7 @@ def lead_list(request):
     return render(request, "leads/lead_list.html", context)
 
 
+@login_required
 def lead_detail(request, pk):
 
     lead = Lead.objects.get(id=pk)
@@ -94,6 +98,14 @@ def lead_detail(request, pk):
 #     return render(request, "leads/lead_update.html", context)
 
 
+# class SignupView(LoginRequiredMixin, generic.CreateView):
+#     template_name = "registration/signup.html"
+#     form_class = CustomUserCreationForm
+
+#     def get_success_url(self):
+#         return reverse("login")
+
+
 class SignupView(generic.CreateView):
     template_name = "registration/signup.html"
     form_class = CustomUserCreationForm
@@ -102,6 +114,7 @@ class SignupView(generic.CreateView):
         return reverse("login")
 
 
+@login_required
 def lead_create(request):
     print("Create Lead View")
     print(request.POST)
@@ -130,6 +143,7 @@ def lead_create(request):
     return render(request, "leads/lead_create.html", context)
 
 
+@login_required
 def lead_update(request, pk):
     print("Update Lead View")
     print("ID: ", pk)
@@ -159,6 +173,7 @@ def lead_update(request, pk):
     return render(request, "leads/lead_update.html", context)
 
 
+@login_required
 def lead_delete(request, pk):
 
     lead = Lead.objects.get(id=pk)

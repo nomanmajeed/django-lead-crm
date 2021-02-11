@@ -29,6 +29,7 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = "leads.User"  # App name . User model class name
 
+LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/leads"
 LOGOUT_REDIRECT_URL = "landing_page"
 
