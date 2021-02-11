@@ -7,7 +7,8 @@ from django.contrib.auth.models import AbstractUser
 # Custom User Class Interiting from the main AbstractUser Class
 # We can modify the User class in future if needed
 class User(AbstractUser):
-    pass
+    is_organisor = models.BooleanField(default=True)
+    is_agent = models.BooleanField(default=False)
 
 
 class UserProfile(models.Model):

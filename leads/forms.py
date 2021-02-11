@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, UsernameField
 from .models import Lead
 
+
 User = get_user_model()
 
 
@@ -10,7 +11,7 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ("username",)
-        field_classes = {"usern)ame": UsernameField}
+        field_classes = {"username": UsernameField}
 
 
 class LeadFrom(forms.Form):
@@ -22,11 +23,6 @@ class LeadFrom(forms.Form):
 
 class LeadModelFrom(forms.ModelForm):
     class Meta:
-        modal = Lead
-        fields = {
-            "first_name",
-            "last_name",
-            "age",
-            "agent",
-        }
+        model = Lead
+        fields = ("first_name", "last_name", "age", "agent")
 

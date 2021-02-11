@@ -176,8 +176,10 @@ def lead_update(request, pk):
 @login_required
 def lead_delete(request, pk):
 
-    lead = Lead.objects.get(id=pk)
-    lead.delete()
+    if request.method == "POST":
+        lead = Lead.objects.get(id=pk)
+        lead.delete()
 
-    return redirect("/leads/")
+        return redirect("/leads/")
 
+    return render(request, "leads/lead_delete.html")
