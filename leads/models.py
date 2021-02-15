@@ -40,6 +40,20 @@ class Agent(models.Model):
         verbose_name_plural = "Agents"
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=30)  # New, Contacted, Converted, Unconverted
+    organisation = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = ""
+        managed = True
+        verbose_name = "Category"
+        verbose_name_plural = "Categorys"
+
+
 class Lead(models.Model):
 
     first_name = models.CharField(max_length=20)
@@ -49,6 +63,9 @@ class Lead(models.Model):
     agent = models.ForeignKey(
         Agent, null=True, blank=True, on_delete=models.SET_NULL
     )  # Relationship with Agent table describing that every Lead has one agent
+    category = models.ForeignKey(
+        Category, null=True, blank=True, on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -67,4 +84,3 @@ def post_user_created_signal(sender, instance, created, **kwargs):
 
 
 post_save.connect(post_user_created_signal, sender=User)
-

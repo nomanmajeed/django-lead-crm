@@ -12,9 +12,9 @@
                 <div class="flex mb-4">
                     <a href="{% url 'leads:lead_detail' pk=lead.id %}"
                         class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">Details</a>
-                    <a href="{% url 'leads:category_update' pk=lead.id %}"
-                        class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">Category</a>
-                    <a class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">Update</a>
+                    <a class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">Category</a>
+                    <a href="{% url 'leads:lead_update' pk=lead.id %}"
+                        class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">Update</a>
                 </div>
                 <form method="post">
                     {% csrf_token %}
@@ -22,11 +22,6 @@
 
                     <button type="submit">Submit</button>
                 </form>
-                <div class="flex">
-                    <a href="{% url 'leads:lead_delete' pk=lead.id %}"
-                        class="flex ml-auto text-white bg-red-500 border-0 py-2 px-6 focus:outline-none hover:bg-red-600 rounded">Delete</a>
-
-                </div>
             </div>
             <img alt="ecommerce" class="lg:w-1/2 w-full lg:h-auto h-64 object-cover object-center rounded"
                 src="https://dummyimage.com/400x400">
