@@ -6,6 +6,7 @@ from django.views import generic
 from django.shortcuts import render, redirect, reverse
 from .models import Lead, Agent
 from .forms import LeadFrom, LeadModelFrom, CustomUserCreationForm
+from .decorators import user_is_organisor
 
 # Create your views here.
 
@@ -17,8 +18,15 @@ def landing_page(request):
 
 @login_required
 def lead_list(request):
+    user = request.user
+    leads = None
 
-    leads = Lead.objects.all()
+    if user.is_organisor:
+        leads = Lead.objects.filter(organisation=user.userprofile)
+    if user.is_agent:
+        leads = Lead.objects.filter(organisation=user.agent.organisation)
+        leads = leads.filter(agent__user=user)
+
     context = {"leads": leads}
 
     return render(request, "leads/lead_list.html", context)
@@ -115,6 +123,7 @@ class SignupView(generic.CreateView):
 
 
 @login_required
+@user_is_organisor
 def lead_create(request):
     print("Create Lead View")
     print(request.POST)
@@ -144,6 +153,7 @@ def lead_create(request):
 
 
 @login_required
+@user_is_organisor
 def lead_update(request, pk):
     print("Update Lead View")
     print("ID: ", pk)
@@ -174,6 +184,7 @@ def lead_update(request, pk):
 
 
 @login_required
+@user_is_organisor
 def lead_delete(request, pk):
 
     if request.method == "POST":

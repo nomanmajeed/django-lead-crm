@@ -45,8 +45,9 @@ class Lead(models.Model):
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
     age = models.IntegerField(default=0)
+    organisation = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     agent = models.ForeignKey(
-        Agent, on_delete=models.CASCADE
+        Agent, null=True, blank=True, on_delete=models.SET_NULL
     )  # Relationship with Agent table describing that every Lead has one agent
 
     def __str__(self):
