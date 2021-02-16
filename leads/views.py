@@ -151,7 +151,9 @@ def lead_create(request):
             print("Form is valid")
             print(form.cleaned_data)
 
-            form.save()
+            lead = form.save(commit=False)
+            lead.organisation = request.user.userprofile
+            lead.save()
 
             send_mail(
                 subject="Lead Created",
