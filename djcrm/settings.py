@@ -38,6 +38,9 @@ LOGOUT_REDIRECT_URL = "landing_page"
 INSTALLED_APPS = [
     # Project Apps
     "leads",
+    # Third party apps
+    "crispy_forms",
+    "crispy_tailwind",
     # Default Django Apps
     "django.contrib.admin",
     "django.contrib.auth",
@@ -46,6 +49,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 ]
+
+# Tailwind Crispy Forms Setting
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+
+CRISPY_TEMPLATE_PACK = "tailwind"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
