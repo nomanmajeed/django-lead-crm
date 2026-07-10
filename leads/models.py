@@ -54,6 +54,8 @@ class Organisation(models.Model):
         default="",
         help_text="Postal address shown in marketing email footers (CAN-SPAM).",
     )
+    stripe_customer_id = models.CharField(max_length=255, blank=True, default="")
+    stripe_subscription_id = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

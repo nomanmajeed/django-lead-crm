@@ -18,9 +18,24 @@ from .models import (
 
 @admin.register(Organisation)
 class OrganisationAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "plan", "owner", "auto_assign_enabled", "timezone", "created_at")
+    list_display = (
+        "name",
+        "slug",
+        "plan",
+        "owner",
+        "stripe_customer_id",
+        "auto_assign_enabled",
+        "timezone",
+        "created_at",
+    )
     list_filter = ("plan", "timezone", "auto_assign_enabled")
-    search_fields = ("name", "slug", "owner__username", "owner__email")
+    search_fields = (
+        "name",
+        "slug",
+        "owner__username",
+        "owner__email",
+        "stripe_customer_id",
+    )
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("created_at", "updated_at")
 
