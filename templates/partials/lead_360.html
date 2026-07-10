@@ -34,9 +34,31 @@
                     <span class="text-base-content/60">Agent</span>
                     <span>{% if lead.agent %}{{ lead.agent.user.username }}{% else %}Unassigned{% endif %}</span>
                 </div>
+                <div class="flex justify-between gap-3 text-sm">
+                    <span class="text-base-content/60">Last emailed</span>
+                    <span>{% if lead.last_emailed_at %}{{ lead.last_emailed_at|date:"M j, Y g:i A" }}{% else %}Never{% endif %}</span>
+                </div>
                 {% if lead.description %}
                 <p class="text-sm text-base-content/70 pt-2 border-t border-base-300">{{ lead.description }}</p>
                 {% endif %}
+            </section>
+
+            <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
+                <h3 class="font-semibold">Email history</h3>
+                <ul class="space-y-2 text-sm">
+                    {% for row in email_history %}
+                    <li class="border-b border-base-300 pb-2 last:border-0 last:pb-0">
+                        <p class="font-medium">{{ row.label }}</p>
+                        <p class="text-base-content/60 truncate">{{ row.subject|default:row.status }}</p>
+                        <p class="text-xs text-base-content/50 mt-1">
+                            {{ row.kind|title }} · {{ row.status }}
+                            {% if row.at %} · {{ row.at|date:"M j, g:i A" }}{% endif %}
+                        </p>
+                    </li>
+                    {% empty %}
+                    <li class="text-base-content/60">No campaign or sequence emails yet.</li>
+                    {% endfor %}
+                </ul>
             </section>
 
             <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">

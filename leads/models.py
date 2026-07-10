@@ -187,6 +187,11 @@ class Lead(models.Model):
     phone_number = models.CharField(max_length=20)
     email = models.EmailField()
     custom_fields = models.JSONField(default=dict, blank=True)
+    last_emailed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the lead was last sent a marketing/transactional email.",
+    )
 
     objects = TenantManager()
 
@@ -240,6 +245,10 @@ class LeadActivity(models.Model):
         STATUS = "status", "Status change"
         ASSIGNMENT = "assignment", "Assignment"
         CUSTOM = "custom", "Custom field"
+        EMAIL_SENT = "email_sent", "Email sent"
+        EMAIL_OPEN = "email_open", "Email opened"
+        EMAIL_CLICK = "email_click", "Email clicked"
+        EMAIL_UNSUBSCRIBE = "email_unsubscribe", "Unsubscribed"
 
     lead = models.ForeignKey(
         Lead, on_delete=models.CASCADE, related_name="activities"

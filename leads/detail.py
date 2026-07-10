@@ -105,6 +105,10 @@ def lead_detail(request, pk):
         "sequence"
     ).order_by("-enrolled_at")[:10]
 
+    from email_engine.lead_sync import lead_email_history
+
+    email_history = lead_email_history(lead, limit=20)
+
     return render(
         request,
         _space_template(
@@ -121,5 +125,6 @@ def lead_detail(request, pk):
             "custom_source": custom.get("source", ""),
             "is_agent_space": getattr(request, "product_space", None) == "agent",
             "sequence_enrollments": sequence_enrollments,
+            "email_history": email_history,
         },
     )

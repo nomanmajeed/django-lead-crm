@@ -133,6 +133,9 @@ def record_open(outbound: OutboundEmail, *, payload: dict | None = None):
         event_type=EmailDeliveryEvent.EventType.OPEN,
         payload=payload or {"source": "pixel"},
     )
+    from email_engine.lead_sync import sync_email_open
+
+    sync_email_open(outbound)
 
 
 def record_click(outbound: OutboundEmail, target_url: str):
@@ -143,6 +146,9 @@ def record_click(outbound: OutboundEmail, target_url: str):
         event_type=EmailDeliveryEvent.EventType.CLICK,
         payload={"url": target_url, "source": "wrap"},
     )
+    from email_engine.lead_sync import sync_email_click
+
+    sync_email_click(outbound, url=target_url)
 
 
 def safe_redirect_url(raw: str, fallback: str = "/") -> str:
@@ -178,3 +184,6 @@ def process_unsubscribe(outbound: OutboundEmail) -> None:
         event_type=EmailDeliveryEvent.EventType.UNSUBSCRIBE,
         payload={"email": outbound.to_email, "at": timezone.now().isoformat()},
     )
+    from email_engine.lead_sync import sync_email_unsubscribe
+
+    sync_email_unsubscribe(outbound)
