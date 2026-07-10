@@ -20,6 +20,7 @@ def queue_transactional_email(
     async_send: bool | None = None,
     track: bool = False,
     respect_suppression: bool = False,
+    enforce_quota: bool | None = None,
 ):
     """
     Persist an outbound email and send via Celery (or eagerly in local/dev).
@@ -27,6 +28,8 @@ def queue_transactional_email(
     When respect_suppression=True and the address is suppressed, the row is
     stored as SUPPRESSED and nothing is sent.
     When track=True, open/click/unsubscribe instrumentation is applied on deliver.
+    When enforce_quota is True (default for tracked/marketing mail), monthly
+    plan caps block the send with status QUOTA_EXCEEDED.
     """
     to_email = (to_email or "").strip()
     if respect_suppression and organisation is not None:
@@ -43,6 +46,27 @@ def queue_transactional_email(
                 provider=get_email_provider().name,
                 status=OutboundEmail.Status.SUPPRESSED,
                 error_message="Address is on the suppression list",
+                tracking_enabled=False,
+            )
+
+    check_quota = enforce_quota if enforce_quota is not None else track
+    if check_quota and organisation is not None:
+        from billing.entitlements import EntitlementDenied
+        from billing.usage import assert_can_send_email
+
+        try:
+            assert_can_send_email(organisation)
+        except EntitlementDenied as exc:
+            return OutboundEmail.objects.create(
+                organisation=organisation,
+                to_email=to_email,
+                from_email=from_email or default_from_email(),
+                subject=subject,
+                body_text=body_text,
+                body_html=body_html,
+                provider=get_email_provider().name,
+                status=OutboundEmail.Status.QUOTA_EXCEEDED,
+                error_message=exc.message,
                 tracking_enabled=False,
             )
 

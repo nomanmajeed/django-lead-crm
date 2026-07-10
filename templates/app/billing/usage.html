@@ -1,0 +1,70 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Usage · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-3xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Usage</h2>
+            <p class="text-base-content/70 mt-1">
+                {{ organisation.name }} · {{ entitlements.label }} plan
+                · email period <span class="font-medium">{{ usage.period_label }}</span> (UTC calendar month)
+            </p>
+        </div>
+        <a href="{% url 'billing_plans' %}" class="btn btn-outline btn-sm">Plans & billing</a>
+    </div>
+
+    {% if usage.warnings %}
+    <div class="border border-warning/40 bg-warning/10 rounded-box p-4 space-y-2">
+        <p class="font-semibold text-sm">Usage alerts</p>
+        {% for meter in usage.warnings %}
+        <p class="text-sm">
+            {% if meter.hard_blocked %}
+            <span class="badge badge-error badge-sm">Cap reached</span>
+            {% else %}
+            <span class="badge badge-warning badge-sm">Near limit</span>
+            {% endif %}
+            {{ meter.label }}: {{ meter.used }}{% if meter.limit != None %} / {{ meter.limit }}{% endif %}
+        </p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Meter</th>
+                    <th>Used</th>
+                    <th>Limit</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for meter in usage.meters %}
+                <tr>
+                    <td class="font-medium">{{ meter.label }}</td>
+                    <td>{{ meter.used }}</td>
+                    <td>{% if meter.limit != None %}{{ meter.limit }}{% else %}Unlimited{% endif %}</td>
+                    <td>
+                        {% if meter.hard_blocked %}
+                        <span class="badge badge-error badge-sm">Blocked</span>
+                        {% elif meter.soft_warning %}
+                        <span class="badge badge-warning badge-sm">Warning</span>
+                        {% else %}
+                        <span class="badge badge-ghost badge-sm">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-xs text-base-content/50">
+        Email counters reset at the start of each UTC calendar month. Seats, leads, campaigns,
+        and sequences are live counts (not period-based).
+    </p>
+</div>
+{% endblock %}

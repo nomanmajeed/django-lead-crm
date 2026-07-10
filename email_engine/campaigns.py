@@ -170,6 +170,9 @@ def _send_one_recipient(recipient: CampaignRecipient) -> CampaignRecipient:
     if outbound.status == OutboundEmail.Status.SUPPRESSED:
         recipient.status = CampaignRecipient.Status.SKIPPED
         recipient.error_message = "Address suppressed"
+    elif outbound.status == OutboundEmail.Status.QUOTA_EXCEEDED:
+        recipient.status = CampaignRecipient.Status.SKIPPED
+        recipient.error_message = outbound.error_message or "Monthly email quota exceeded"
     elif outbound.status == OutboundEmail.Status.SENT:
         recipient.status = CampaignRecipient.Status.SENT
         recipient.error_message = ""

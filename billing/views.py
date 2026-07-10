@@ -16,34 +16,15 @@ from billing.stripe_service import (
     downgrade_to_free,
     stripe_enabled,
 )
-from email_engine.models import Campaign, EmailSequence, OutboundEmail
-from leads.models import Agent, Lead, Membership, Organisation
+from billing.usage import usage_snapshot
+from leads.models import Organisation
 
 
 class BillingPlansView(OrganisorAndLoginRequiredMixin, View):
-    def _usage(self, org):
-        return {
-            "seats": Membership.objects.filter(organisation=org).count()
-            if org
-            else 0,
-            "leads": Lead.objects.for_org(org).count() if org else 0,
-            "agents": Agent.objects.for_org(org).count() if org else 0,
-            "campaigns": Campaign.objects.filter(organisation=org).count()
-            if org
-            else 0,
-            "sequences": EmailSequence.objects.filter(organisation=org).count()
-            if org
-            else 0,
-            "monthly_emails": OutboundEmail.objects.filter(
-                organisation=org, status=OutboundEmail.Status.SENT
-            ).count()
-            if org
-            else 0,
-        }
-
     def get(self, request):
         org = request.organisation
         entitlements = get_entitlements(org)
+        snapshot = usage_snapshot(org)
         return render(
             request,
             "app/billing/plans.html",
@@ -52,7 +33,7 @@ class BillingPlansView(OrganisorAndLoginRequiredMixin, View):
                 "organisation": org,
                 "entitlements": entitlements,
                 "plans": all_plans(),
-                "usage": self._usage(org),
+                "usage": snapshot,
                 "stripe_enabled": stripe_enabled(),
                 "stripe_simulate": getattr(
                     settings, "STRIPE_BILLING_SIMULATE", False
@@ -150,3 +131,21 @@ class BillingPlansView(OrganisorAndLoginRequiredMixin, View):
             "Stripe is not configured. Set STRIPE_SECRET_KEY and price IDs.",
         )
         return redirect("billing_plans")
+
+
+class BillingUsageView(OrganisorAndLoginRequiredMixin, View):
+    """Owner/Admin usage meters for the current plan period."""
+
+    def get(self, request):
+        org = request.organisation
+        snapshot = usage_snapshot(org)
+        return render(
+            request,
+            "app/billing/usage.html",
+            {
+                "topbar_title": "Usage",
+                "organisation": org,
+                "usage": snapshot,
+                "entitlements": snapshot["entitlements"],
+            },
+        )

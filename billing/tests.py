@@ -78,6 +78,83 @@ class PlansEntitlementsTests(TestCase):
         self.assertEqual(response.context["entitlements"].key, "free")
 
 
+class UsageMeteringTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="usage_owner",
+            password="pass12345",
+            email="usage@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+
+    def test_email_cap_blocks_tracked_send_with_clear_error(self):
+        from django.utils import timezone
+
+        from billing.usage import emails_sent_this_period, usage_snapshot
+        from email_engine.models import OutboundEmail
+        from email_engine.service import queue_transactional_email
+
+        # Free plan monthly_emails = 200; seed 200 sent this period
+        now = timezone.now()
+        for i in range(200):
+            OutboundEmail.objects.create(
+                organisation=self.organisation,
+                to_email=f"u{i}@example.com",
+                from_email="noreply@leadcrm.local",
+                subject="seed",
+                body_text="x",
+                status=OutboundEmail.Status.SENT,
+                sent_at=now,
+            )
+        self.assertEqual(emails_sent_this_period(self.organisation), 200)
+
+        blocked = queue_transactional_email(
+            to_email="new@example.com",
+            subject="Should fail",
+            body_text="Nope",
+            body_html="<p>Nope</p>",
+            organisation=self.organisation,
+            track=True,
+            enforce_quota=True,
+        )
+        self.assertEqual(blocked.status, OutboundEmail.Status.QUOTA_EXCEEDED)
+        self.assertIn("monthly emails", blocked.error_message.lower())
+        self.assertIsNone(blocked.sent_at)
+
+        snapshot = usage_snapshot(self.organisation)
+        self.assertTrue(snapshot["by_name"]["monthly_emails"].hard_blocked)
+
+        self.client.login(username="usage_owner", password="pass12345")
+        usage_page = self.client.get(reverse("billing_usage"))
+        self.assertEqual(usage_page.status_code, 200)
+        self.assertContains(usage_page, "Cap reached")
+        self.assertContains(usage_page, "UTC calendar month")
+
+    def test_soft_warning_near_limit(self):
+        from django.utils import timezone
+
+        from billing.usage import usage_snapshot
+        from email_engine.models import OutboundEmail
+
+        # 80% of 200 = 160
+        now = timezone.now()
+        for i in range(160):
+            OutboundEmail.objects.create(
+                organisation=self.organisation,
+                to_email=f"w{i}@example.com",
+                from_email="noreply@leadcrm.local",
+                subject="seed",
+                body_text="x",
+                status=OutboundEmail.Status.SENT,
+                sent_at=now,
+            )
+        snapshot = usage_snapshot(self.organisation)
+        meter = snapshot["by_name"]["monthly_emails"]
+        self.assertTrue(meter.soft_warning)
+        self.assertFalse(meter.hard_blocked)
+
+
 class StripeBillingTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(
