@@ -913,3 +913,83 @@ class MarketingSiteTests(TestCase):
         self.assertContains(response, reverse("signup"))
         signup = self.client.get(reverse("signup"))
         self.assertEqual(signup.status_code, 200)
+
+
+class OnboardingChecklistTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="onboard_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+
+    def test_checklist_appears_for_new_org(self):
+        self.client.login(username="onboard_owner", password="pass12345")
+        response = self.client.get(reverse("app_home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Get started")
+        self.assertContains(response, "Invite a teammate")
+        self.assertContains(response, "Import leads")
+
+    def test_items_complete_automatically(self):
+        from email_engine.models import Campaign, EmailTemplate
+        from leads.models import ContactList
+
+        agent_user = User.objects.create_user(
+            username="onboard_agent",
+            password="pass12345",
+            is_organisor=False,
+            is_agent=True,
+        )
+        Membership.objects.create(
+            user=agent_user,
+            organisation=self.organisation,
+            role=Membership.Role.AGENT,
+        )
+        Lead.objects.create(
+            first_name="A",
+            last_name="B",
+            age=20,
+            organisation=self.organisation,
+            description="x",
+            phone_number="1",
+            email="ab@example.com",
+        )
+        template = EmailTemplate.objects.create(
+            organisation=self.organisation,
+            name="T",
+            subject="Hi",
+            body_html="<p>Hi</p>",
+            body_text="Hi",
+        )
+        contact_list = ContactList.objects.create(
+            organisation=self.organisation,
+            name="L",
+            kind=ContactList.Kind.STATIC,
+        )
+        Campaign.objects.create(
+            organisation=self.organisation,
+            name="Done",
+            status=Campaign.Status.SENT,
+            template=template,
+            contact_list=contact_list,
+            created_by=self.owner,
+        )
+
+        from leads.onboarding import onboarding_snapshot
+
+        snap = onboarding_snapshot(self.organisation)
+        self.assertTrue(snap["show"])
+        self.assertEqual(snap["completed"], 3)
+        self.assertTrue(snap["all_done"])
+
+    def test_owner_can_dismiss_permanently(self):
+        self.client.login(username="onboard_owner", password="pass12345")
+        response = self.client.post(reverse("onboarding_dismiss"))
+        self.assertEqual(response.status_code, 302)
+        self.organisation.refresh_from_db()
+        self.assertIsNotNone(self.organisation.onboarding_dismissed_at)
+
+        dashboard = self.client.get(reverse("app_home"))
+        self.assertNotContains(dashboard, "Get started")

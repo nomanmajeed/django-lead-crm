@@ -76,6 +76,8 @@ class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
         email_week = org_weekly_email_summary(organisation, days=7)
         campaign_reports = recent_campaign_reports(organisation, limit=5)
 
+        from leads.onboarding import onboarding_snapshot
+
         context.update(
             {
                 "topbar_title": "Dashboard",
@@ -92,6 +94,7 @@ class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
                 "is_empty": lead_count == 0 and agents.count() == 0,
                 "recent_leads": recent_leads,
                 "recent_invites": recent_invites,
+                "onboarding": onboarding_snapshot(organisation),
             }
         )
         return context
