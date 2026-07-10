@@ -14,7 +14,7 @@ class AgentListView(OrganisorAndLoginRequiredMixin, generic.ListView):
     template_name = "agents/agent_list.html"
 
     def get_queryset(self):
-        return Agent.objects.filter(organisation=self.request.user.userprofile)
+        return Agent.objects.filter(organisation=self.request.user.organisation)
 
 
 class AgentCreateView(OrganisorAndLoginRequiredMixin, generic.CreateView):
@@ -31,9 +31,9 @@ class AgentCreateView(OrganisorAndLoginRequiredMixin, generic.CreateView):
         user.set_password(f"{random.randint(0,1000000)}")
         user.save()
 
-        Agent.objects.create(user=user, organisation=self.request.user.userprofile)
+        Agent.objects.create(user=user, organisation=self.request.user.organisation)
         # agent = form.save(commit=False)
-        # agent.organisation = self.request.user.userprofile
+        # agent.organisation = self.request.user.organisation
         # agent.save()
         send_mail(
             subject="You are invited to be an agent",
@@ -50,7 +50,7 @@ class AgentDetailView(OrganisorAndLoginRequiredMixin, generic.DetailView):
     context_object_name = "agent"
 
     def get_queryset(self):
-        return Agent.objects.filter(organisation=self.request.user.userprofile)
+        return Agent.objects.filter(organisation=self.request.user.organisation)
 
 
 class AgentUpdateView(OrganisorAndLoginRequiredMixin, generic.UpdateView):
@@ -72,4 +72,4 @@ class AgentDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
         return reverse("agents:agent_list")
 
     def get_queryset(self):
-        return Agent.objects.filter(organisation=self.request.user.userprofile)
+        return Agent.objects.filter(organisation=self.request.user.organisation)

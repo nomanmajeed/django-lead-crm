@@ -29,7 +29,7 @@ def lead_list(request):
     leads = None
 
     if user.is_organisor:
-        leads = Lead.objects.filter(organisation=user.userprofile, agent__isnull=False)
+        leads = Lead.objects.filter(organisation=user.organisation, agent__isnull=False)
     if user.is_agent:
         leads = Lead.objects.filter(
             organisation=user.agent.organisation, agent__isnull=False
@@ -40,7 +40,7 @@ def lead_list(request):
 
     if user.is_organisor:
         queryset = Lead.objects.filter(
-            organisation=user.userprofile, agent__isnull=True
+            organisation=user.organisation, agent__isnull=True
         )
         context["unassigned_leads"] = queryset
 
@@ -152,7 +152,7 @@ def lead_create(request):
             print(form.cleaned_data)
 
             lead = form.save(commit=False)
-            lead.organisation = request.user.userprofile
+            lead.organisation = request.user.organisation
             lead.save()
 
             send_mail(
@@ -242,7 +242,7 @@ class CategoryListView(LoginRequiredMixin, generic.ListView):
         user = self.request.user
 
         if user.is_organisor:
-            queryset = Lead.objects.filter(organisation=user.userprofile)
+            queryset = Lead.objects.filter(organisation=user.organisation)
         else:
             queryset = Lead.objects.filter(organisation=user.agent.organisation)
 
@@ -256,7 +256,7 @@ class CategoryListView(LoginRequiredMixin, generic.ListView):
         user = self.request.user
 
         if user.is_organisor:
-            queryset = Category.objects.filter(organisation=user.userprofile)
+            queryset = Category.objects.filter(organisation=user.organisation)
         else:
             queryset = Category.objects.filter(organisation=user.agent.organisation)
 
@@ -280,7 +280,7 @@ class CategoryDetailView(LoginRequiredMixin, generic.DetailView):
         user = self.request.user
 
         if user.is_organisor:
-            queryset = Category.objects.filter(organisation=user.userprofile)
+            queryset = Category.objects.filter(organisation=user.organisation)
         else:
             queryset = Category.objects.filter(organisation=user.agent.organisation)
 
@@ -298,7 +298,7 @@ class LeadCategoryUpdateView(LoginRequiredMixin, generic.UpdateView):
         user = self.request.user
 
         if user.is_organisor:
-            queryset = Lead.objects.filter(organisation=user.userprofile)
+            queryset = Lead.objects.filter(organisation=user.organisation)
         else:
             queryset = Lead.objects.filter(organisation=user.agent.organisation)
 
