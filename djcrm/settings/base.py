@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "billing",
     "notifications",
     "audit",
+    "capture",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",
@@ -132,6 +133,9 @@ STRIPE_PRICE_PRO = env("STRIPE_PRICE_PRO", default="")
 STRIPE_PRICE_BUSINESS = env("STRIPE_PRICE_BUSINESS", default="")
 # When True (and no Stripe secret), billing POST can set plan directly for local/dev.
 STRIPE_BILLING_SIMULATE = env.bool("STRIPE_BILLING_SIMULATE", default=True)
+
+CAPTURE_FORM_RATE_LIMIT = env.int("CAPTURE_FORM_RATE_LIMIT", default=20)
+CAPTURE_FORM_RATE_WINDOW = env.int("CAPTURE_FORM_RATE_WINDOW", default=3600)
 
 # --- Celery / Redis ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")

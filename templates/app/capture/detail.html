@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ capture.name }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-3xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">{{ capture.name }}</h2>
+            <p class="text-base-content/70 mt-1">Public key: <code class="text-xs">{{ capture.public_key }}</code></p>
+        </div>
+        <a href="{{ public_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Open public form</a>
+    </div>
+
+    <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
+        <h3 class="font-semibold">Embed snippet</h3>
+        <p class="text-sm text-base-content/70">Paste on your site. Submissions create leads in {{ capture.organisation.name }}.</p>
+        <pre class="text-xs bg-base-200 p-4 rounded-box overflow-x-auto"><code>&lt;iframe
+  src="{{ embed_url }}"
+  title="{{ capture.name }}"
+  style="width:100%;min-height:420px;border:0;border-radius:8px;"
+  loading="lazy"&gt;&lt;/iframe&gt;</code></pre>
+        <p class="text-xs text-base-content/60">Direct link: <a href="{{ public_url }}" class="link link-primary" target="_blank" rel="noopener">{{ public_url }}</a></p>
+        <p class="text-xs text-base-content/60">Rate limit: 20 submissions per hour per IP (honeypot + server-side checks).</p>
+    </section>
+
+    <form method="post" class="space-y-4 border border-base-300 rounded-box bg-base-100 p-5">
+        {% csrf_token %}
+        <h3 class="font-semibold">Settings</h3>
+        {% for field in form %}
+        <label class="form-control w-full">
+            <span class="label-text">{{ field.label }}</span>
+            {{ field }}
+        </label>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+    </form>
+</div>
+{% endblock %}

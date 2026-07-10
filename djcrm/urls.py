@@ -14,6 +14,12 @@ from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
 from audit.views import AuditExportView, AuditLogView
+from capture.views import (
+    CaptureFormCreateView,
+    CaptureFormDetailView,
+    CaptureFormIndexView,
+    PublicCaptureView,
+)
 from notifications.views import NotificationInboxView
 from billing.views import BillingPlansView, BillingUsageView
 from billing.webhooks import stripe_webhook
@@ -64,6 +70,7 @@ urlpatterns = [
     path("", landing_page, name="landing_page"),
     path("features/", MarketingFeaturesView.as_view(), name="marketing_features"),
     path("pricing/", MarketingPricingView.as_view(), name="marketing_pricing"),
+    path("f/<uuid:public_key>/", PublicCaptureView.as_view(), name="public_capture"),
     # Organiser app space
     path("app/", AppHomeView.as_view(), name="app_home"),
     path(
@@ -115,6 +122,13 @@ urlpatterns = [
         name="compliance_settings",
     ),
     path("app/lists/", ContactListIndexView.as_view(), name="list_index"),
+    path("app/capture/", CaptureFormIndexView.as_view(), name="capture_index"),
+    path("app/capture/create/", CaptureFormCreateView.as_view(), name="capture_create"),
+    path(
+        "app/capture/<int:pk>/",
+        CaptureFormDetailView.as_view(),
+        name="capture_detail",
+    ),
     path("app/lists/create/", ContactListCreateView.as_view(), name="list_create"),
     path(
         "app/lists/<int:pk>/",

@@ -1,0 +1,42 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Capture forms · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Capture forms</h2>
+            <p class="text-base-content/70 mt-1">Public forms that create leads in your org.</p>
+        </div>
+        <a href="{% url 'capture_create' %}" class="btn btn-primary btn-sm">New form</a>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Auto-sequence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in forms %}
+                <tr>
+                    <td>
+                        <a href="{% url 'capture_detail' row.pk %}" class="link link-hover font-medium">{{ row.name }}</a>
+                    </td>
+                    <td>{% if row.is_active %}<span class="badge badge-success badge-sm">Active</span>{% else %}<span class="badge badge-ghost badge-sm">Off</span>{% endif %}</td>
+                    <td>{{ row.auto_sequence.name|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-base-content/60 py-10">No capture forms yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

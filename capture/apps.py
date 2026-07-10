@@ -1,0 +1,9 @@
+import uuid
+
+from django.apps import AppConfig
+
+
+class CaptureConfig(AppConfig):
+    default_auto_field = "django.db.models.AutoField"
+    name = "capture"
+    verbose_name = "Lead capture"
