@@ -67,6 +67,11 @@ class Organisation(models.Model):
     )
     stripe_customer_id = models.CharField(max_length=255, blank=True, default="")
     stripe_subscription_id = models.CharField(max_length=255, blank=True, default="")
+    onboarding_dismissed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When set, the onboarding checklist is hidden for this org.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

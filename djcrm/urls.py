@@ -38,6 +38,7 @@ from email_engine.tracking_views import track_click, track_open, unsubscribe
 from email_engine.webhooks import email_webhook
 from leads.assignment_views import AssignmentSettingsView
 from leads.auth_views import RoleBasedLoginView
+from leads.onboarding_views import OnboardingDismissView
 from leads.settings_views import (
     DangerZoneView,
     OrganisationProfileSettingsView,
@@ -65,6 +66,11 @@ urlpatterns = [
     path("pricing/", MarketingPricingView.as_view(), name="marketing_pricing"),
     # Organiser app space
     path("app/", AppHomeView.as_view(), name="app_home"),
+    path(
+        "app/onboarding/dismiss/",
+        OnboardingDismissView.as_view(),
+        name="onboarding_dismiss",
+    ),
     path("app/leads/", include(("leads.urls", "leads"), namespace="leads")),
     path("app/agents/", include(("agents.urls", "agents"), namespace="agents")),
     path("app/team/", TeamInviteListView.as_view(), name="team"),

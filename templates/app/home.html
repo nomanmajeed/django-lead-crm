@@ -19,6 +19,8 @@
         </div>
     </div>
 
+    {% include "partials/onboarding_checklist.html" %}
+
     {% if is_empty %}
     {% url 'leads:lead_create' as create_lead_url %}
     {% include "partials/empty_state.html" with title="No leads yet" body="Create your first lead or invite an agent to get the workspace moving." cta_url=create_lead_url cta_label="Create first lead" %}
