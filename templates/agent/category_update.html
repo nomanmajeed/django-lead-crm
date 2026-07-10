@@ -1,0 +1,21 @@
+{% extends "layouts/agent.html" %}
+
+{% block title %}Update category · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-md space-y-6">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Update category</h2>
+        <p class="text-base-content/70 mt-1">{{ lead.first_name }} {{ lead.last_name }}</p>
+    </div>
+
+    <form method="post" class="space-y-4 border border-base-300 rounded-box bg-base-100 p-5">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <a href="{% url 'agent_leads:lead_detail' pk=lead.id %}" class="btn btn-ghost btn-sm">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

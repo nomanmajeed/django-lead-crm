@@ -56,12 +56,39 @@ class MembershipPermissionsTests(TestCase):
         self.client.login(username="agent1", password="pass12345")
         response = self.client.get(reverse("agents:agent_list"))
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("leads:lead_list"))
+        self.assertEqual(response.url, reverse("agent_home"))
 
     def test_owner_can_open_agent_list(self):
         self.client.login(username="owner", password="pass12345")
         response = self.client.get(reverse("agents:agent_list"))
         self.assertEqual(response.status_code, 200)
+
+    def test_agent_blocked_from_app_home(self):
+        self.client.login(username="agent1", password="pass12345")
+        response = self.client.get(reverse("app_home"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("agent_home"))
+
+    def test_agent_can_open_agent_home(self):
+        self.client.login(username="agent1", password="pass12345")
+        response = self.client.get(reverse("agent_home"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_redirects_agent_to_agent_home(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "agent1", "password": "pass12345"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("agent_home"))
+
+    def test_login_redirects_owner_to_app_home(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "owner", "password": "pass12345"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("app_home"))
 
 
 class TenantIsolationTests(TestCase):
@@ -201,6 +228,7 @@ class TeamInviteTests(TestCase):
             ).exists()
         )
         self.assertTrue(Agent.objects.filter(user=agent_user).exists())
+        self.assertEqual(response.url, reverse("agent_home"))
 
     def test_revoked_invite_rejected(self):
         self.client.login(username="boss", password="pass12345")

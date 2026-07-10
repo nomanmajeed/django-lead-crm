@@ -1,0 +1,45 @@
+{% extends "layouts/agent.html" %}
+
+{% block title %}My leads · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h2 class="font-display text-3xl font-bold">My leads</h2>
+            <p class="text-base-content/70 mt-1">Leads assigned to you</p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Category</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr>
+                    <td>{{ lead.first_name }} {{ lead.last_name }}</td>
+                    <td>{{ lead.email }}</td>
+                    <td>{{ lead.phone_number }}</td>
+                    <td>{% if lead.category %}{{ lead.category.name }}{% else %}—{% endif %}</td>
+                    <td class="text-right">
+                        <a href="{% url 'agent_leads:lead_detail' lead.pk %}" class="link link-primary">Open</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-base-content/60">No leads assigned yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

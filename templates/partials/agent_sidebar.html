@@ -1,11 +1,16 @@
 <aside class="bg-base-100 text-base-content min-h-full w-64 border-r border-base-300">
     <div class="p-4 border-b border-base-300">
-        <a href="{% url 'ui_agent' %}" class="font-display text-lg font-bold tracking-tight">Lead CRM</a>
+        <a href="{% url 'agent_home' %}" class="font-display text-lg font-bold tracking-tight">Lead CRM</a>
         <p class="text-xs text-base-content/60 mt-1">Agent workspace</p>
     </div>
     <ul class="menu p-3 gap-1">
-        <li><a href="{% url 'ui_agent' %}" class="active">My work</a></li>
-        <li><a href="{% url 'leads:lead_list' %}">My leads</a></li>
+        <li><a href="{% url 'agent_home' %}">My work</a></li>
+        <li><a href="{% url 'agent_leads:lead_list' %}">My leads</a></li>
         <li><a class="opacity-50 pointer-events-none">Tasks</a></li>
+        {% if can_manage %}
+        <li class="mt-2 pt-2 border-t border-base-300">
+            <a href="{% url 'app_home' %}">Switch to organiser</a>
+        </li>
+        {% endif %}
     </ul>
 </aside>
