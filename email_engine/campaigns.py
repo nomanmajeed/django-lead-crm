@@ -295,6 +295,11 @@ def _finalize_if_done(campaign: Campaign) -> None:
         return
     if campaign.status == Campaign.Status.CANCELLED:
         return
+    already_done = campaign.status == Campaign.Status.SENT
     campaign.status = Campaign.Status.SENT
     campaign.completed_at = timezone.now()
     campaign.save(update_fields=["status", "completed_at", "updated_at"])
+    if not already_done:
+        from notifications.service import notify_campaign_finished
+
+        notify_campaign_finished(campaign)

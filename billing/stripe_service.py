@@ -116,6 +116,7 @@ def apply_subscription_to_org(
     customer_id: str = "",
     subscription_id: str = "",
 ) -> Organisation:
+    previous = organisation.plan
     update_fields = ["plan", "updated_at"]
     organisation.plan = plan
     if customer_id:
@@ -125,15 +126,26 @@ def apply_subscription_to_org(
         organisation.stripe_subscription_id = subscription_id
         update_fields.append("stripe_subscription_id")
     organisation.save(update_fields=update_fields)
+    if previous != plan:
+        from notifications.service import notify_billing_change
+
+        notify_billing_change(organisation, plan=plan, actor_label="Stripe")
     return organisation
 
 
 def downgrade_to_free(organisation) -> Organisation:
+    previous = organisation.plan
     organisation.plan = Organisation.Plan.FREE
     organisation.stripe_subscription_id = ""
     organisation.save(
         update_fields=["plan", "stripe_subscription_id", "updated_at"]
     )
+    if previous != Organisation.Plan.FREE:
+        from notifications.service import notify_billing_change
+
+        notify_billing_change(
+            organisation, plan=Organisation.Plan.FREE, actor_label="Billing"
+        )
     return organisation
 
 

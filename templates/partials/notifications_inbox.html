@@ -1,0 +1,46 @@
+<div class="space-y-6 max-w-2xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Notifications</h2>
+            <p class="text-base-content/70 mt-1">Org-scoped updates for your account.</p>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_all_read">
+            <button type="submit" class="btn btn-outline btn-sm">Mark all read</button>
+        </form>
+    </div>
+
+    <ul class="border border-base-300 rounded-box bg-base-100 divide-y divide-base-300">
+        {% for note in notifications %}
+        <li class="px-5 py-4 flex gap-3 items-start {% if not note.is_read %}bg-base-200/40{% endif %}">
+            <div class="grow min-w-0">
+                <p class="font-medium">
+                    {% if note.link_url %}
+                    <a href="{{ note.link_url }}" class="link link-hover">{{ note.title }}</a>
+                    {% else %}
+                    {{ note.title }}
+                    {% endif %}
+                </p>
+                {% if note.body %}
+                <p class="text-sm text-base-content/70 mt-1">{{ note.body }}</p>
+                {% endif %}
+                <p class="text-xs text-base-content/50 mt-2">
+                    {{ note.get_kind_display }} · {{ note.created_at|date:"M j, g:i A" }}
+                    {% if note.is_read %}· read{% else %}· unread{% endif %}
+                </p>
+            </div>
+            {% if not note.is_read %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_read">
+                <input type="hidden" name="notification_id" value="{{ note.pk }}">
+                <button type="submit" class="btn btn-ghost btn-xs">Mark read</button>
+            </form>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li class="px-5 py-10 text-center text-base-content/60">No notifications yet.</li>
+        {% endfor %}
+    </ul>
+</div>
