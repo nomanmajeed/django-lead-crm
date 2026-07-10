@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from email_engine.models import EmailDeliveryEvent, EmailTemplate, OutboundEmail
+from email_engine.models import (
+    Campaign,
+    CampaignRecipient,
+    EmailDeliveryEvent,
+    EmailTemplate,
+    OutboundEmail,
+)
 
 
 @admin.register(OutboundEmail)
@@ -37,3 +43,26 @@ class EmailTemplateAdmin(admin.ModelAdmin):
     list_display = ("name", "organisation", "subject", "updated_at")
     search_fields = ("name", "subject", "organisation__name")
     raw_id_fields = ("organisation",)
+
+
+@admin.register(Campaign)
+class CampaignAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "organisation",
+        "status",
+        "contact_list",
+        "template",
+        "scheduled_at",
+        "updated_at",
+    )
+    list_filter = ("status",)
+    search_fields = ("name", "organisation__name")
+    raw_id_fields = ("organisation", "contact_list", "template", "created_by")
+
+
+@admin.register(CampaignRecipient)
+class CampaignRecipientAdmin(admin.ModelAdmin):
+    list_display = ("campaign", "lead", "status", "updated_at")
+    list_filter = ("status",)
+    raw_id_fields = ("campaign", "lead", "outbound_email")

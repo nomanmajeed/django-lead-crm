@@ -5,9 +5,15 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from email_engine.merge import build_merge_context, render_merge
-from email_engine.models import EmailDeliveryEvent, EmailTemplate, OutboundEmail
+from email_engine.models import (
+    Campaign,
+    CampaignRecipient,
+    EmailDeliveryEvent,
+    EmailTemplate,
+    OutboundEmail,
+)
 from email_engine.service import queue_transactional_email
-from leads.models import Lead, Organisation
+from leads.models import ContactList, ContactListMembership, Lead, Organisation
 
 User = get_user_model()
 
@@ -165,3 +171,149 @@ class EmailTemplateTests(TestCase):
         html = _safe_preview_html("<p>Hi {{first_name}}</p>", context)
         self.assertIn("&lt;script&gt;", html)
         self.assertNotIn("<script>", html)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_PROVIDER="console",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    EMAIL_ASYNC=True,
+)
+class CampaignOneShotTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="camp_owner",
+            password="pass12345",
+            email="camp@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.template = EmailTemplate.objects.create(
+            organisation=self.organisation,
+            name="Blast",
+            subject="Hi {{first_name}}",
+            body_html="<p>Hello {{first_name}}</p>",
+            body_text="Hello {{first_name}}",
+        )
+        self.contact_list = ContactList.objects.create(
+            organisation=self.organisation,
+            name="Prospects",
+            kind=ContactList.Kind.STATIC,
+        )
+        self.leads = []
+        for i in range(3):
+            lead = Lead.objects.create(
+                first_name=f"Lead{i}",
+                last_name="Test",
+                age=30,
+                organisation=self.organisation,
+                description="x",
+                phone_number=str(i),
+                email=f"lead{i}@example.com",
+            )
+            ContactListMembership.objects.create(
+                contact_list=self.contact_list, lead=lead
+            )
+            self.leads.append(lead)
+
+    def test_send_now_delivers_to_all_and_marks_sent(self):
+        self.client.login(username="camp_owner", password="pass12345")
+        create = self.client.post(
+            reverse("campaign_create"),
+            {
+                "name": "Spring blast",
+                "contact_list": self.contact_list.pk,
+                "template": self.template.pk,
+            },
+        )
+        self.assertEqual(create.status_code, 302)
+        campaign = Campaign.objects.get(name="Spring blast")
+        self.assertEqual(campaign.status, Campaign.Status.DRAFT)
+
+        response = self.client.post(
+            reverse("campaign_detail", kwargs={"pk": campaign.pk}),
+            {"action": "send_now"},
+        )
+        self.assertEqual(response.status_code, 302)
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.status, Campaign.Status.SENT)
+        self.assertEqual(
+            campaign.recipients.filter(status=CampaignRecipient.Status.SENT).count(),
+            3,
+        )
+        self.assertEqual(
+            OutboundEmail.objects.filter(organisation=self.organisation).count(),
+            3,
+        )
+        subjects = set(
+            OutboundEmail.objects.filter(organisation=self.organisation).values_list(
+                "subject", flat=True
+            )
+        )
+        self.assertEqual(subjects, {"Hi Lead0", "Hi Lead1", "Hi Lead2"})
+
+    def test_cancel_stops_further_sends(self):
+        from email_engine.campaigns import (
+            cancel_campaign,
+            materialize_recipients,
+            process_campaign_batch,
+        )
+
+        campaign = Campaign.objects.create(
+            organisation=self.organisation,
+            name="Partial",
+            contact_list=self.contact_list,
+            template=self.template,
+            batch_size=1,
+            batch_delay_seconds=0,
+            status=Campaign.Status.SENDING,
+        )
+        materialize_recipients(campaign)
+        self.assertEqual(campaign.recipients.count(), 3)
+
+        process_campaign_batch(campaign.pk, chain=False)
+        campaign.refresh_from_db()
+        self.assertEqual(
+            campaign.recipients.filter(status=CampaignRecipient.Status.SENT).count(),
+            1,
+        )
+        self.assertEqual(campaign.status, Campaign.Status.SENDING)
+
+        cancel_campaign(campaign)
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.status, Campaign.Status.CANCELLED)
+
+        result = process_campaign_batch(campaign.pk)
+        self.assertEqual(result, "cancelled")
+        campaign.refresh_from_db()
+        self.assertEqual(
+            campaign.recipients.filter(status=CampaignRecipient.Status.SENT).count(),
+            1,
+        )
+        self.assertEqual(
+            campaign.recipients.filter(
+                status=CampaignRecipient.Status.SKIPPED
+            ).count(),
+            2,
+        )
+        self.assertEqual(
+            OutboundEmail.objects.filter(organisation=self.organisation).count(),
+            1,
+        )
+
+    def test_status_transitions_draft_to_sending_to_sent(self):
+        from email_engine.campaigns import schedule_or_send_campaign
+
+        campaign = Campaign.objects.create(
+            organisation=self.organisation,
+            name="Flow",
+            contact_list=self.contact_list,
+            template=self.template,
+            batch_size=25,
+            status=Campaign.Status.DRAFT,
+        )
+        schedule_or_send_campaign(campaign, send_now=True)
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.status, Campaign.Status.SENT)
+        self.assertIsNotNone(campaign.started_at)
+        self.assertIsNotNone(campaign.completed_at)

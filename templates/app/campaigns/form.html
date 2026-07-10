@@ -1,0 +1,35 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ heading }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">{{ heading }}</h2>
+        <p class="text-base-content/70 mt-1">Pick a list or segment and an email template.</p>
+    </div>
+
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        <label class="form-control">
+            <span class="label-text">Name</span>
+            {{ form.name }}
+            {% if form.name.errors %}<span class="text-error text-sm">{{ form.name.errors.0 }}</span>{% endif %}
+        </label>
+        <label class="form-control">
+            <span class="label-text">List / segment</span>
+            {{ form.contact_list }}
+            {% if form.contact_list.errors %}<span class="text-error text-sm">{{ form.contact_list.errors.0 }}</span>{% endif %}
+        </label>
+        <label class="form-control">
+            <span class="label-text">Email template</span>
+            {{ form.template }}
+            {% if form.template.errors %}<span class="text-error text-sm">{{ form.template.errors.0 }}</span>{% endif %}
+        </label>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save draft</button>
+            <a href="{% url 'campaign_index' %}" class="btn btn-ghost btn-sm">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

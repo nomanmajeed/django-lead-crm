@@ -13,6 +13,11 @@ from django.contrib.auth.views import (
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
+from email_engine.campaign_views import (
+    CampaignCreateView,
+    CampaignDetailView,
+    CampaignIndexView,
+)
 from email_engine.template_views import (
     EmailTemplateCreateView,
     EmailTemplateDetailView,
@@ -84,6 +89,17 @@ urlpatterns = [
         "app/email-templates/<int:pk>/",
         EmailTemplateDetailView.as_view(),
         name="email_template_detail",
+    ),
+    path("app/campaigns/", CampaignIndexView.as_view(), name="campaign_index"),
+    path(
+        "app/campaigns/create/",
+        CampaignCreateView.as_view(),
+        name="campaign_create",
+    ),
+    path(
+        "app/campaigns/<int:pk>/",
+        CampaignDetailView.as_view(),
+        name="campaign_detail",
     ),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),
