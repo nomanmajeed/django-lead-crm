@@ -56,11 +56,59 @@ class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
         return context
 
 
+class AgentHomeView(LoginRequiredMixin, generic.TemplateView):
+    """Agent workspace home."""
+
+    template_name = "agent/home.html"
+    login_url = "login"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not user_is_agent_member(request.user):
+            if user_can_manage_organisation(request.user):
+                return redirect("app_home")
+            return redirect("landing_page")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organisation = self.request.organisation
+        user = self.request.user
+        leads = Lead.objects.none()
+        if organisation:
+            leads = Lead.objects.for_org(organisation).filter(
+                agent__isnull=False,
+                agent__user=user,
+            )
+        context.update(
+            {
+                "topbar_title": "My work",
+                "organisation": organisation,
+                "leads": leads,
+                "lead_count": leads.count(),
+            }
+        )
+        return context
+
+
+def _agent_scoped_leads(request):
+    qs = Lead.objects.for_org(request.organisation)
+    user = request.user
+    if user_is_agent_member(user) and not user_can_manage_organisation(user):
+        qs = qs.filter(agent__isnull=False, agent__user=user)
+    return qs
+
+
+def _space_template(request, organiser_name, agent_name):
+    if getattr(request, "product_space", None) == "agent":
+        return agent_name
+    return organiser_name
+
+
 @login_required
 def lead_list(request):
     user = request.user
     organisation = request.organisation
-    context = {"leads": Lead.objects.none()}
+    context = {"leads": Lead.objects.none(), "topbar_title": "Leads"}
 
     if organisation and user_can_manage_organisation(user, organisation):
         context["leads"] = Lead.objects.for_org(organisation).filter(
@@ -74,15 +122,23 @@ def lead_list(request):
             agent__isnull=False,
             agent__user=user,
         )
+        context["topbar_title"] = "My leads"
 
-    return render(request, "leads/lead_list.html", context)
+    return render(
+        request,
+        _space_template(request, "leads/lead_list.html", "agent/lead_list.html"),
+        context,
+    )
 
 
 @login_required
 def lead_detail(request, pk):
-    lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
-    return render(request, "leads/lead_detail.html", {"lead": lead})
-
+    lead = get_object_or_404(_agent_scoped_leads(request), pk=pk)
+    return render(
+        request,
+        _space_template(request, "leads/lead_detail.html", "agent/lead_detail.html"),
+        {"lead": lead, "topbar_title": f"{lead.first_name} {lead.last_name}"},
+    )
 
 @login_required
 @user_is_organisor
@@ -100,7 +156,7 @@ def lead_create(request):
                 from_email="test@test.com",
                 recipient_list=["test2@test.com"],
             )
-            return redirect("/leads")
+            return redirect(reverse("leads:lead_list"))
 
     return render(request, "leads/lead_create.html", {"form": form})
 
@@ -115,7 +171,7 @@ def lead_update(request, pk):
         form = LeadModelFrom(request.POST, instance=lead)
         if form.is_valid():
             form.save()
-            return redirect("/leads")
+            return redirect(reverse("leads:lead_list"))
 
     return render(request, "leads/lead_update.html", {"form": form, "lead": lead})
 
@@ -126,7 +182,7 @@ def lead_delete(request, pk):
     lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
     if request.method == "POST":
         lead.delete()
-        return redirect("/leads/")
+        return redirect(reverse("leads:lead_list"))
     return render(request, "leads/lead_delete.html", {"lead": lead})
 
 
@@ -183,11 +239,27 @@ class CategoryDetailView(LoginRequiredMixin, generic.DetailView):
 
 
 class LeadCategoryUpdateView(LoginRequiredMixin, generic.UpdateView):
-    template_name = "leads/category_update.html"
     form_class = LeadCategoryUpdateForm
 
+    def get_template_names(self):
+        return [
+            _space_template(
+                self.request,
+                "leads/category_update.html",
+                "agent/category_update.html",
+            )
+        ]
+
     def get_success_url(self):
-        return reverse("leads:lead_detail", kwargs={"pk": self.get_object().id})
+        pk = self.get_object().id
+        if getattr(self.request, "product_space", None) == "agent":
+            return reverse("agent_leads:lead_detail", kwargs={"pk": pk})
+        return reverse("leads:lead_detail", kwargs={"pk": pk})
 
     def get_queryset(self):
-        return Lead.objects.for_org(self.request.organisation)
+        return _agent_scoped_leads(self.request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["topbar_title"] = "Update category"
+        return context

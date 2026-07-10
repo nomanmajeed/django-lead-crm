@@ -1,0 +1,23 @@
+{% extends "layouts/agent.html" %}
+
+{% block title %}My work · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        {% if organisation %}
+        <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
+        {% endif %}
+        <h2 class="font-display text-3xl font-bold mt-1">My work</h2>
+        <p class="text-base-content/70 mt-2 max-w-xl">
+            Leads assigned to you. Open a lead to update its category or follow up.
+        </p>
+    </div>
+
+    <div class="border border-base-300 rounded-box bg-base-100 p-5 max-w-sm">
+        <p class="text-sm text-base-content/60">Assigned leads</p>
+        <p class="font-display text-3xl font-bold mt-1">{{ lead_count }}</p>
+        <a href="{% url 'agent_leads:lead_list' %}" class="link link-primary text-sm mt-2 inline-block">View my leads</a>
+    </div>
+</div>
+{% endblock %}

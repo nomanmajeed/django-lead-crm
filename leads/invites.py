@@ -227,7 +227,7 @@ class InviteAcceptView(generic.FormView):
         )
         if self.invite.role == Invite.Role.ADMIN:
             return redirect("app_home")
-        return redirect("leads:lead_list")
+        return redirect("agent_home")
 
     def get(self, request, *args, **kwargs):
         # Logged-in matching user can accept with one click via POST confirm
@@ -252,5 +252,5 @@ class InviteAcceptView(generic.FormView):
             )
             if self.invite.role == Invite.Role.ADMIN:
                 return redirect("app_home")
-            return redirect("leads:lead_list")
+            return redirect("agent_home")
         return super().post(request, *args, **kwargs)

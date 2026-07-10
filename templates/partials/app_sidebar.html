@@ -12,5 +12,10 @@
         <li><a href="{% url 'team' %}">Team</a></li>
         <li><a class="opacity-50 pointer-events-none">Campaigns</a></li>
         <li><a class="opacity-50 pointer-events-none">Settings</a></li>
+        {% if is_agent_member %}
+        <li class="mt-2 pt-2 border-t border-base-300">
+            <a href="{% url 'agent_home' %}">Switch to agent</a>
+        </li>
+        {% endif %}
     </ul>
 </aside>
