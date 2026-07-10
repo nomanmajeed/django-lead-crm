@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: leadcrm-db
+    environment:
+      POSTGRES_USER: leadcrm
+      POSTGRES_PASSWORD: leadcrm
+      POSTGRES_DB: leadcrm
+    ports:
+      # Host 5433 avoids clashing with a system Postgres on 5432
+      - "5433:5432"
+    volumes:
+      - leadcrm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadcrm -d leadcrm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: leadcrm-redis
+    ports:
+      - "6379:6379"
+    profiles:
+      - workers
+
+volumes:
+  leadcrm_pgdata:
