@@ -1,4 +1,5 @@
-from django.urls import path, include
+from django.urls import path
+from .pipeline import PipelineView
 from .views import (
     lead_list,
     lead_detail,
@@ -15,6 +16,7 @@ app_name = "leads"
 
 urlpatterns = [
     path("", lead_list, name="lead_list"),
+    path("pipeline/", PipelineView.as_view(), name="pipeline"),
     path("<int:pk>/", lead_detail, name="lead_detail"),
     path("<int:pk>/update", lead_update, name="lead_update"),
     path("<int:pk>/delete", lead_delete, name="lead_delete"),
