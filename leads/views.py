@@ -2,6 +2,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.views import generic
 
@@ -87,7 +88,7 @@ class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
 
 
 class AgentHomeView(LoginRequiredMixin, generic.TemplateView):
-    """Agent workspace home."""
+    """Agent workspace home — assigned leads, follow-ups, quick stage updates."""
 
     template_name = "agent/home.html"
     login_url = "login"
@@ -99,22 +100,64 @@ class AgentHomeView(LoginRequiredMixin, generic.TemplateView):
             return redirect("landing_page")
         return super().dispatch(request, *args, **kwargs)
 
+    def _assigned_leads(self):
+        organisation = self.request.organisation
+        if not organisation:
+            return Lead.objects.none()
+        return (
+            Lead.objects.for_org(organisation)
+            .filter(agent__isnull=False, agent__user=self.request.user)
+            .select_related("category", "agent")
+            .order_by("-date_added")
+        )
+
+    def post(self, request, *args, **kwargs):
+        from django.contrib import messages
+
+        lead_id = request.POST.get("lead_id")
+        category_id = request.POST.get("category_id") or None
+        lead = get_object_or_404(self._assigned_leads(), pk=lead_id)
+        if category_id:
+            category = get_object_or_404(
+                Category.objects.for_org(request.organisation),
+                pk=category_id,
+            )
+            lead.category = category
+        else:
+            lead.category = None
+        lead.save(update_fields=["category"])
+        messages.success(
+            request,
+            f"Updated {lead.first_name} {lead.last_name} to "
+            f"{lead.category.name if lead.category else 'Unassigned'}.",
+        )
+        return redirect("agent_home")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         organisation = self.request.organisation
-        user = self.request.user
-        leads = Lead.objects.none()
-        if organisation:
-            leads = Lead.objects.for_org(organisation).filter(
-                agent__isnull=False,
-                agent__user=user,
-            )
+        leads = self._assigned_leads()
+        follow_ups = leads.filter(
+            Q(category__isnull=True)
+            | Q(category__name__iexact="new")
+            | Q(category__name__iexact="contacted")
+        )
+        categories = (
+            Category.objects.for_org(organisation)
+            if organisation
+            else Category.objects.none()
+        )
         context.update(
             {
                 "topbar_title": "My work",
                 "organisation": organisation,
-                "leads": leads,
+                "leads": leads[:10],
                 "lead_count": leads.count(),
+                "follow_ups": follow_ups[:8],
+                "follow_up_count": follow_ups.count(),
+                "categories": categories,
+                "is_empty": not leads.exists(),
+                "recent_leads": leads[:5],
             }
         )
         return context

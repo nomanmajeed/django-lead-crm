@@ -4,20 +4,92 @@
 
 {% block content %}
 <div class="space-y-8">
-    <div>
-        {% if organisation %}
-        <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
-        {% endif %}
-        <h2 class="font-display text-3xl font-bold mt-1">My work</h2>
-        <p class="text-base-content/70 mt-2 max-w-xl">
-            Leads assigned to you. Open a lead to update its category or follow up.
-        </p>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            {% if organisation %}
+            <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
+            {% endif %}
+            <h2 class="font-display text-3xl font-bold mt-1">My work</h2>
+            <p class="text-base-content/70 mt-2 max-w-xl">
+                Assigned leads only. Update stage here or open a lead for details.
+            </p>
+        </div>
+        <a href="{% url 'agent_leads:lead_list' %}" class="btn btn-outline btn-sm">All my leads</a>
     </div>
 
-    <div class="border border-base-300 rounded-box bg-base-100 p-5 max-w-sm">
-        <p class="text-sm text-base-content/60">Assigned leads</p>
-        <p class="font-display text-3xl font-bold mt-1">{{ lead_count }}</p>
-        <a href="{% url 'agent_leads:lead_list' %}" class="link link-primary text-sm mt-2 inline-block">View my leads</a>
+    {% if is_empty %}
+    {% include "partials/empty_state.html" with title="No assigned leads" body="When an organiser assigns leads to you, they will show up here." %}
+    {% else %}
+    <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Assigned leads</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ lead_count }}</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Needs follow-up</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ follow_up_count }}</p>
+            <p class="text-xs text-base-content/50 mt-2">New, contacted, or uncategorized</p>
+        </div>
     </div>
+
+    <section class="border border-base-300 rounded-box bg-base-100">
+        <div class="px-5 py-4 border-b border-base-300">
+            <h3 class="font-semibold">Follow-ups</h3>
+            <p class="text-sm text-base-content/60 mt-1">One-click stage update</p>
+        </div>
+        <ul class="divide-y divide-base-300">
+            {% for lead in follow_ups %}
+            <li class="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                <div>
+                    <a href="{% url 'agent_leads:lead_detail' lead.pk %}" class="font-medium link link-hover">
+                        {{ lead.first_name }} {{ lead.last_name }}
+                    </a>
+                    <p class="text-xs text-base-content/60">
+                        {% if lead.category %}{{ lead.category.name }}{% else %}Uncategorized{% endif %}
+                        · {{ lead.email }}
+                    </p>
+                </div>
+                <form method="post" class="flex flex-wrap items-center gap-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="lead_id" value="{{ lead.pk }}">
+                    <select name="category_id" class="select select-bordered select-sm min-w-40">
+                        <option value="">Unassigned</option>
+                        {% for category in categories %}
+                        <option value="{{ category.pk }}" {% if lead.category_id == category.pk %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                </form>
+            </li>
+            {% empty %}
+            <li class="px-5 py-8 text-center text-base-content/60">All caught up — no follow-ups waiting.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="border border-base-300 rounded-box bg-base-100">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-base-300">
+            <h3 class="font-semibold">Recent activity</h3>
+            <a href="{% url 'agent_leads:lead_list' %}" class="link link-primary text-sm">View all</a>
+        </div>
+        <ul class="divide-y divide-base-300">
+            {% for lead in recent_leads %}
+            <li class="px-5 py-3 flex items-center justify-between gap-3">
+                <div>
+                    <a href="{% url 'agent_leads:lead_detail' lead.pk %}" class="font-medium link link-hover">
+                        {{ lead.first_name }} {{ lead.last_name }}
+                    </a>
+                    <p class="text-xs text-base-content/60">
+                        {% if lead.category %}{{ lead.category.name }}{% else %}Uncategorized{% endif %}
+                    </p>
+                </div>
+                <span class="text-xs text-base-content/50 whitespace-nowrap">{{ lead.date_added|date:"M j" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
 </div>
 {% endblock %}

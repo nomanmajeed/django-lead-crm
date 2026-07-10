@@ -72,3 +72,15 @@ class LeadCategoryUpdateForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = ("category",)
+
+    def __init__(self, *args, **kwargs):
+        organisation = kwargs.pop("organisation", None)
+        super().__init__(*args, **kwargs)
+        from .models import Category
+
+        if organisation is not None:
+            self.fields["category"].queryset = Category.objects.for_org(organisation)
+        elif self.instance and self.instance.pk and self.instance.organisation_id:
+            self.fields["category"].queryset = Category.objects.for_org(
+                self.instance.organisation
+            )

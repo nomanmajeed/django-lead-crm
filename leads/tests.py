@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from leads.models import Agent, Invite, Lead, Membership, Organisation
+from leads.models import Agent, Category, Invite, Lead, Membership, Organisation
 from leads.permissions import (
     get_user_organisation,
     user_can_manage_organisation,
@@ -309,3 +309,69 @@ class TeamInviteTests(TestCase):
         response = self.client.get(reverse("team"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "listme@co.test")
+
+
+class AgentDashboardTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="agent_boss",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.agent_user = User.objects.create_user(
+            username="worker",
+            password="pass12345",
+            is_organisor=False,
+            is_agent=True,
+        )
+        self.agent = Agent.objects.create(
+            user=self.agent_user, organisation=self.organisation
+        )
+        Membership.objects.create(
+            user=self.agent_user,
+            organisation=self.organisation,
+            role=Membership.Role.AGENT,
+        )
+        self.category = Category.objects.create(
+            name="Contacted", organisation=self.organisation
+        )
+        self.mine = Lead.objects.create(
+            first_name="Mine",
+            last_name="Lead",
+            age=30,
+            organisation=self.organisation,
+            agent=self.agent,
+            description="Assigned",
+            phone_number="1",
+            email="mine@example.com",
+        )
+        self.other = Lead.objects.create(
+            first_name="Other",
+            last_name="Lead",
+            age=31,
+            organisation=self.organisation,
+            description="Unassigned",
+            phone_number="2",
+            email="other@example.com",
+        )
+
+    def test_agent_home_shows_only_assigned_leads(self):
+        self.client.login(username="worker", password="pass12345")
+        response = self.client.get(reverse("agent_home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Mine Lead")
+        self.assertNotContains(response, "Other Lead")
+        self.assertEqual(response.context["lead_count"], 1)
+        self.assertEqual(response.context["follow_up_count"], 1)
+
+    def test_agent_can_update_stage_from_dashboard(self):
+        self.client.login(username="worker", password="pass12345")
+        response = self.client.post(
+            reverse("agent_home"),
+            {"lead_id": self.mine.pk, "category_id": self.category.pk},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("agent_home"))
+        self.mine.refresh_from_db()
+        self.assertEqual(self.mine.category_id, self.category.pk)
