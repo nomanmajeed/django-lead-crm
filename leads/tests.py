@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from leads.models import Agent, Lead, Membership, Organisation
+from leads.models import Agent, Invite, Lead, Membership, Organisation
 from leads.permissions import (
     get_user_organisation,
     user_can_manage_organisation,
@@ -158,3 +158,95 @@ class SignupOnboardingTests(TestCase):
         self.assertEqual(follow.status_code, 200)
         self.assertContains(follow, "NewCo Labs")
         self.assertContains(follow, "No leads yet")
+
+
+class TeamInviteTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="boss",
+            password="pass12345",
+            email="boss@co.test",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+
+    def test_owner_can_invite_and_agent_accepts(self):
+        self.client.login(username="boss", password="pass12345")
+        response = self.client.post(
+            reverse("team_invite_create"),
+            {"email": "agent@co.test", "role": "agent"},
+        )
+        self.assertEqual(response.status_code, 302)
+        invite = Invite.objects.get(email="agent@co.test")
+        self.assertTrue(invite.is_usable())
+
+        self.client.logout()
+        response = self.client.post(
+            reverse("invite_accept", kwargs={"token": invite.token}),
+            {
+                "username": "hired_agent",
+                "password1": "complex-pass-12345",
+                "password2": "complex-pass-12345",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        invite.refresh_from_db()
+        self.assertIsNotNone(invite.accepted_at)
+        agent_user = User.objects.get(username="hired_agent")
+        self.assertTrue(
+            Membership.objects.filter(
+                user=agent_user,
+                organisation=self.organisation,
+                role=Membership.Role.AGENT,
+            ).exists()
+        )
+        self.assertTrue(Agent.objects.filter(user=agent_user).exists())
+
+    def test_revoked_invite_rejected(self):
+        self.client.login(username="boss", password="pass12345")
+        self.client.post(
+            reverse("team_invite_create"),
+            {"email": "gone@co.test", "role": "agent"},
+        )
+        invite = Invite.objects.get(email="gone@co.test")
+        self.client.post(reverse("team_invite_revoke", kwargs={"pk": invite.pk}))
+        invite.refresh_from_db()
+        self.assertIsNotNone(invite.revoked_at)
+
+        self.client.logout()
+        response = self.client.get(
+            reverse("invite_accept", kwargs={"token": invite.token})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("landing_page"))
+
+    def test_expired_invite_rejected(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from leads.invites import build_invite_token
+
+        invite = Invite.objects.create(
+            organisation=self.organisation,
+            email="old@co.test",
+            role=Invite.Role.AGENT,
+            token=build_invite_token(),
+            invited_by=self.owner,
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+        response = self.client.get(
+            reverse("invite_accept", kwargs={"token": invite.token})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("landing_page"))
+
+    def test_team_page_lists_invites(self):
+        self.client.login(username="boss", password="pass12345")
+        self.client.post(
+            reverse("team_invite_create"),
+            {"email": "listme@co.test", "role": "agent"},
+        )
+        response = self.client.get(reverse("team"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "listme@co.test")

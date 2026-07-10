@@ -1,0 +1,35 @@
+{% extends "layouts/marketing.html" %}
+{% load tailwind_filters %}
+
+{% block title %}Accept invite · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-10">
+    <div class="mb-6">
+        <h1 class="font-display text-3xl font-bold">Join {{ invite.organisation.name }}</h1>
+        <p class="text-base-content/70 mt-2">
+            Invited as <span class="font-medium">{{ invite.get_role_display }}</span>
+            · {{ invite.email }}
+        </p>
+    </div>
+
+    {% if request.user.is_authenticated %}
+    <form method="post" class="bg-base-100 border border-base-300 rounded-box p-6 space-y-4">
+        {% csrf_token %}
+        <p class="text-sm text-base-content/70">
+            Signed in as <strong>{{ request.user.username }}</strong>.
+            Confirm to join this organisation.
+        </p>
+        <button type="submit" name="confirm_join" value="1" class="btn btn-primary w-full">
+            Accept invite
+        </button>
+    </form>
+    {% else %}
+    <form method="post" class="bg-base-100 border border-base-300 rounded-box p-6 space-y-4">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary w-full">Create account &amp; join</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

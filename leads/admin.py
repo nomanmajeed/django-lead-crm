@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Agent, Category, Lead, Membership, Organisation, User
+from .models import Agent, Category, Invite, Lead, Membership, Organisation, User
 
 
 @admin.register(Organisation)
@@ -23,6 +23,23 @@ class MembershipAdmin(admin.ModelAdmin):
         "organisation__slug",
     )
     raw_id_fields = ("user", "organisation")
+
+
+@admin.register(Invite)
+class InviteAdmin(admin.ModelAdmin):
+    list_display = (
+        "email",
+        "organisation",
+        "role",
+        "created_at",
+        "expires_at",
+        "accepted_at",
+        "revoked_at",
+    )
+    list_filter = ("role",)
+    search_fields = ("email", "organisation__name", "token")
+    raw_id_fields = ("organisation", "invited_by")
+    readonly_fields = ("token", "created_at", "accepted_at", "revoked_at")
 
 
 @admin.register(User)
