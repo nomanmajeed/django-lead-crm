@@ -5,6 +5,8 @@ from django.urls import reverse
 from leads.models import (
     Agent,
     Category,
+    ContactList,
+    ContactListMembership,
     Invite,
     Lead,
     LeadActivity,
@@ -713,3 +715,89 @@ class AssignmentRulesTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.organisation.refresh_from_db()
         self.assertTrue(self.organisation.auto_assign_enabled)
+
+
+class ContactListSegmentTests(TestCase):
+    def setUp(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        self.owner = User.objects.create_user(
+            username="list_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.other = User.objects.create_user(
+            username="list_other",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.other_org = Organisation.objects.get(owner=self.other)
+        self.recent = Lead.objects.create(
+            first_name="Recent",
+            last_name="Lead",
+            age=20,
+            organisation=self.organisation,
+            description="new",
+            phone_number="1",
+            email="recent@example.com",
+        )
+        self.old = Lead.objects.create(
+            first_name="Old",
+            last_name="Lead",
+            age=40,
+            organisation=self.organisation,
+            description="old",
+            phone_number="2",
+            email="old@example.com",
+        )
+        Lead.objects.filter(pk=self.old.pk).update(
+            date_added=timezone.now() - timedelta(days=30)
+        )
+        Lead.objects.create(
+            first_name="Other",
+            last_name="Org",
+            age=25,
+            organisation=self.other_org,
+            description="x",
+            phone_number="3",
+            email="otherorg@example.com",
+        )
+
+    def test_new_leads_last_7_days_segment_and_org_scope(self):
+        self.client.login(username="list_owner", password="pass12345")
+        response = self.client.get(reverse("list_index"))
+        self.assertEqual(response.status_code, 200)
+        segment = ContactList.objects.for_org(self.organisation).get(
+            name="New leads last 7 days"
+        )
+        self.assertEqual(segment.kind, ContactList.Kind.SEGMENT)
+        detail = self.client.get(reverse("list_detail", kwargs={"pk": segment.pk}))
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.context["member_count"], 1)
+        self.assertContains(detail, "Recent Lead")
+        self.assertNotContains(detail, "Old Lead")
+        self.assertNotContains(detail, "Other Org")
+
+    def test_static_list_add_and_preview_count(self):
+        self.client.login(username="list_owner", password="pass12345")
+        response = self.client.post(
+            reverse("list_create"),
+            {"name": "VIP", "kind": "static"},
+        )
+        self.assertEqual(response.status_code, 302)
+        contact_list = ContactList.objects.get(name="VIP")
+        response = self.client.post(
+            reverse("list_detail", kwargs={"pk": contact_list.pk}),
+            {"action": "add", "lead_id": self.recent.pk},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            ContactListMembership.objects.filter(
+                contact_list=contact_list, lead=self.recent
+            ).exists()
+        )
+        detail = self.client.get(reverse("list_detail", kwargs={"pk": contact_list.pk}))
+        self.assertEqual(detail.context["member_count"], 1)
