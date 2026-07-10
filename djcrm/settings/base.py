@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "agents",
     "email_engine",
     "billing",
+    "notifications",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",
@@ -76,6 +77,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "leads.context_processors.tenant",
+                "notifications.context_processors.notifications_badge",
             ],
         },
     },

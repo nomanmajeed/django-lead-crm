@@ -101,6 +101,9 @@ def accept_invite_for_user(invite, user):
 
     invite.accepted_at = timezone.now()
     invite.save(update_fields=["accepted_at"])
+    from notifications.service import notify_invite_accepted
+
+    notify_invite_accepted(invite, user)
 
 
 class TeamInviteListView(OrganisorAndLoginRequiredMixin, generic.ListView):

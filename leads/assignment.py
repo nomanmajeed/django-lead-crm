@@ -49,6 +49,9 @@ def maybe_auto_assign(lead, *, actor=None):
         summary=f"Auto-assigned to {agent.user.username} (round-robin)",
         actor=actor,
     )
+    from notifications.service import notify_assignment
+
+    notify_assignment(lead, agent, actor=actor)
     return lead
 
 
@@ -62,4 +65,7 @@ def assign_lead_to_agent(lead, agent, *, actor=None):
         summary=f"Assigned to {agent.user.username}",
         actor=actor,
     )
+    from notifications.service import notify_assignment
+
+    notify_assignment(lead, agent, actor=actor)
     return lead
