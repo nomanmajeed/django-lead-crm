@@ -2,7 +2,17 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from leads.models import Agent, Category, Invite, Lead, Membership, Organisation
+from leads.models import (
+    Agent,
+    Category,
+    Invite,
+    Lead,
+    LeadActivity,
+    LeadNote,
+    LeadTask,
+    Membership,
+    Organisation,
+)
 from leads.permissions import (
     get_user_organisation,
     user_can_manage_organisation,
@@ -455,3 +465,80 @@ class PipelineTests(TestCase):
             {"lead_id": foreign.pk, "category_id": won.pk},
         )
         self.assertEqual(response.status_code, 404)
+
+
+class LeadDetail360Tests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="detail_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.agent_user = User.objects.create_user(
+            username="detail_agent",
+            password="pass12345",
+            is_organisor=False,
+            is_agent=True,
+        )
+        self.agent = Agent.objects.create(
+            user=self.agent_user, organisation=self.organisation
+        )
+        Membership.objects.create(
+            user=self.agent_user,
+            organisation=self.organisation,
+            role=Membership.Role.AGENT,
+        )
+        self.lead = Lead.objects.create(
+            first_name="Ada",
+            last_name="Detail",
+            age=33,
+            organisation=self.organisation,
+            agent=self.agent,
+            description="360 lead",
+            phone_number="555",
+            email="ada@example.com",
+        )
+
+    def test_organiser_can_add_note_and_see_timeline(self):
+        self.client.login(username="detail_owner", password="pass12345")
+        response = self.client.post(
+            reverse("leads:lead_detail", kwargs={"pk": self.lead.pk}),
+            {"action": "add_note", "body": "Called the prospect"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            LeadNote.objects.filter(lead=self.lead, body="Called the prospect").exists()
+        )
+        self.assertTrue(
+            LeadActivity.objects.filter(
+                lead=self.lead, kind=LeadActivity.Kind.NOTE
+            ).exists()
+        )
+        page = self.client.get(
+            reverse("leads:lead_detail", kwargs={"pk": self.lead.pk})
+        )
+        self.assertContains(page, "Called the prospect")
+        self.assertContains(page, "Timeline")
+
+    def test_agent_can_create_and_complete_task(self):
+        self.client.login(username="detail_agent", password="pass12345")
+        url = reverse("agent_leads:lead_detail", kwargs={"pk": self.lead.pk})
+        response = self.client.post(
+            url, {"action": "add_task", "title": "Send proposal"}
+        )
+        self.assertEqual(response.status_code, 302)
+        task = LeadTask.objects.get(lead=self.lead, title="Send proposal")
+        self.assertIsNone(task.completed_at)
+
+        response = self.client.post(
+            url, {"action": "complete_task", "task_id": task.pk}
+        )
+        self.assertEqual(response.status_code, 302)
+        task.refresh_from_db()
+        self.assertIsNotNone(task.completed_at)
+        self.assertTrue(
+            LeadActivity.objects.filter(
+                lead=self.lead, kind=LeadActivity.Kind.TASK_COMPLETED
+            ).exists()
+        )

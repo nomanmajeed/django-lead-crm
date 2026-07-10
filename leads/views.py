@@ -205,15 +205,6 @@ def lead_list(request):
 
 
 @login_required
-def lead_detail(request, pk):
-    lead = get_object_or_404(_agent_scoped_leads(request), pk=pk)
-    return render(
-        request,
-        _space_template(request, "leads/lead_detail.html", "agent/lead_detail.html"),
-        {"lead": lead, "topbar_title": f"{lead.first_name} {lead.last_name}"},
-    )
-
-@login_required
 @user_is_organisor
 def lead_create(request):
     form = LeadModelFrom()
@@ -279,6 +270,14 @@ class AssignAgentView(OrganisorAndLoginRequiredMixin, generic.FormView):
         )
         lead.agent = agent
         lead.save()
+        from leads.models import LeadActivity, record_lead_activity
+
+        record_lead_activity(
+            lead,
+            kind=LeadActivity.Kind.ASSIGNMENT,
+            summary=f"Assigned to {agent.user.username}",
+            actor=self.request.user,
+        )
         return super().form_valid(form)
 
 
@@ -331,6 +330,23 @@ class LeadCategoryUpdateView(LoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         return _agent_scoped_leads(self.request)
+
+    def form_valid(self, form):
+        from leads.models import LeadActivity, record_lead_activity
+
+        old = self.get_object().category
+        response = super().form_valid(form)
+        new = self.object.category
+        old_name = old.name if old else "Uncategorized"
+        new_name = new.name if new else "Uncategorized"
+        if old_name != new_name:
+            record_lead_activity(
+                self.object,
+                kind=LeadActivity.Kind.STATUS,
+                summary=f"Stage changed from {old_name} to {new_name}",
+                actor=self.request.user,
+            )
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

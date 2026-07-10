@@ -1,8 +1,8 @@
 from django.urls import path
+from .detail import lead_detail
 from .pipeline import PipelineView
 from .views import (
     lead_list,
-    lead_detail,
     lead_create,
     lead_update,
     lead_delete,

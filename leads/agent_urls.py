@@ -1,6 +1,7 @@
 from django.urls import path
 
-from .views import lead_detail, lead_list, LeadCategoryUpdateView
+from .detail import lead_detail
+from .views import LeadCategoryUpdateView, lead_list
 
 app_name = "agent_leads"
 

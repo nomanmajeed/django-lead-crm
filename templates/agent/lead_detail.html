@@ -3,34 +3,5 @@
 {% block title %}{{ lead.first_name }} {{ lead.last_name }} · Lead CRM{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl space-y-6">
-    <div>
-        <p class="text-sm text-base-content/60">Lead</p>
-        <h2 class="font-display text-3xl font-bold mt-1">{{ lead.first_name }} {{ lead.last_name }}</h2>
-    </div>
-
-    <div class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
-        <div class="flex justify-between gap-4">
-            <span class="text-base-content/60">Age</span>
-            <span>{{ lead.age }}</span>
-        </div>
-        <div class="flex justify-between gap-4">
-            <span class="text-base-content/60">Email</span>
-            <span>{{ lead.email }}</span>
-        </div>
-        <div class="flex justify-between gap-4">
-            <span class="text-base-content/60">Phone</span>
-            <span>{{ lead.phone_number }}</span>
-        </div>
-        <div class="flex justify-between gap-4">
-            <span class="text-base-content/60">Category</span>
-            <span>{% if lead.category %}{{ lead.category.name }}{% else %}Unassigned{% endif %}</span>
-        </div>
-    </div>
-
-    <div class="flex flex-wrap gap-2">
-        <a href="{% url 'agent_leads:category_update' pk=lead.id %}" class="btn btn-outline btn-sm">Update category</a>
-        <a href="{% url 'agent_leads:lead_list' %}" class="btn btn-ghost btn-sm">Back to leads</a>
-    </div>
-</div>
+{% include "partials/lead_360.html" %}
 {% endblock %}
