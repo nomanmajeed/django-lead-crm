@@ -15,27 +15,19 @@ from pathlib import Path
 
 import environ
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
 )
 
-READ_DOT_ENV_FILE = env.bool("READ_DOT_ENV_FILE", default=False)
+# Load project-root .env when present (or when READ_DOT_ENV_FILE=True).
+_env_file = BASE_DIR / ".env"
+if env.bool("READ_DOT_ENV_FILE", default=_env_file.exists()):
+    environ.Env.read_env(_env_file)
 
-if READ_DOT_ENV_FILE:
-    # reading .env file (looks next to this settings module by default)
-    environ.Env.read_env()
-
-# for local dev export or set READ_DOT_ENV_FILE=True
-
-# False if not in os.environ
 DEBUG = env("DEBUG")
-
-# Raises django's ImproperlyConfigured exception if SECRET_KEY not in os.environ
 SECRET_KEY = env("SECRET_KEY")
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"] if DEBUG else []
 
@@ -99,16 +91,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "djcrm.wsgi.application"
 
 
-# Database
+# Database — PostgreSQL only (local/dev via Docker Compose; see README.md)
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-# Ticket 02 will switch this to PostgreSQL via DATABASE_URL.
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+DATABASES = {"default": env.db("DATABASE_URL")}
 
 # Keep historical AutoField PKs; avoids noisy migrations on upgrade.
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
