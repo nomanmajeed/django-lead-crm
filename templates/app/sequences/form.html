@@ -1,0 +1,59 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ heading }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-3xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">{{ heading }}</h2>
+        <p class="text-base-content/70 mt-1">Define steps, delays, and when to stop sending.</p>
+    </div>
+
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-6">
+        {% csrf_token %}
+        <label class="form-control">
+            <span class="label-text">Name</span>
+            {{ form.name }}
+        </label>
+        <div class="flex flex-wrap gap-4 text-sm">
+            <label class="flex items-center gap-2">{{ form.exit_on_reply }} Exit on reply</label>
+            <label class="flex items-center gap-2">{{ form.exit_on_stage_change }} Exit on stage change</label>
+            <label class="flex items-center gap-2">{{ form.exit_on_unsubscribe }} Exit on unsubscribe</label>
+        </div>
+
+        {{ formset.management_form }}
+        <div class="space-y-4">
+            <h3 class="font-semibold">Steps</h3>
+            {% for step_form in formset %}
+            <div class="grid md:grid-cols-4 gap-3 border border-base-300 rounded-box p-3">
+                {% for hidden in step_form.hidden_fields %}{{ hidden }}{% endfor %}
+                <label class="form-control">
+                    <span class="label-text text-xs">Position</span>
+                    {{ step_form.position }}
+                </label>
+                <label class="form-control">
+                    <span class="label-text text-xs">Delay days</span>
+                    {{ step_form.delay_days }}
+                </label>
+                <label class="form-control">
+                    <span class="label-text text-xs">Delay hours</span>
+                    {{ step_form.delay_hours }}
+                </label>
+                <label class="form-control">
+                    <span class="label-text text-xs">Template</span>
+                    {{ step_form.template }}
+                </label>
+                {% if step_form.DELETE %}
+                <label class="flex items-center gap-2 text-sm md:col-span-4">{{ step_form.DELETE }} Remove</label>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save draft</button>
+            <a href="{% url 'sequence_index' %}" class="btn btn-ghost btn-sm">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

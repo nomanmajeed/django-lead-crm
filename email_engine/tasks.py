@@ -19,3 +19,10 @@ def process_campaign_batch_task(self, campaign_id: int):
         return process_campaign_batch(campaign_id)
     except Exception as exc:  # noqa: BLE001 — retry transient batch failures
         raise self.retry(exc=exc) from exc
+
+
+@shared_task
+def advance_due_sequences_task():
+    from email_engine.sequences import advance_due_enrollments
+
+    return advance_due_enrollments()

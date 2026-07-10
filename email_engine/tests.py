@@ -3,17 +3,22 @@ import json
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from email_engine.merge import build_merge_context, render_merge
 from email_engine.models import (
     Campaign,
     CampaignRecipient,
     EmailDeliveryEvent,
+    EmailSequence,
     EmailTemplate,
     OutboundEmail,
+    SequenceEnrollment,
+    SequenceStep,
+    SequenceStepSend,
 )
 from email_engine.service import queue_transactional_email
-from leads.models import ContactList, ContactListMembership, Lead, Organisation
+from leads.models import Category, ContactList, ContactListMembership, Lead, Organisation
 
 User = get_user_model()
 
@@ -317,3 +322,164 @@ class CampaignOneShotTests(TestCase):
         self.assertEqual(campaign.status, Campaign.Status.SENT)
         self.assertIsNotNone(campaign.started_at)
         self.assertIsNotNone(campaign.completed_at)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_PROVIDER="console",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    EMAIL_ASYNC=True,
+)
+class SequenceDripTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="seq_owner",
+            password="pass12345",
+            email="seq@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.stage_a = Category.objects.create(
+            name="New", organisation=self.organisation
+        )
+        self.stage_b = Category.objects.create(
+            name="Qualified", organisation=self.organisation
+        )
+        self.templates = []
+        for i in range(1, 4):
+            self.templates.append(
+                EmailTemplate.objects.create(
+                    organisation=self.organisation,
+                    name=f"Step {i} tpl",
+                    subject=f"Step {i} · {{{{first_name}}}}",
+                    body_html=f"<p>Step {i}</p>",
+                    body_text=f"Step {i}",
+                )
+            )
+        self.sequence = EmailSequence.objects.create(
+            organisation=self.organisation,
+            name="Onboarding",
+            status=EmailSequence.Status.ACTIVE,
+            exit_on_reply=True,
+            exit_on_stage_change=True,
+            exit_on_unsubscribe=True,
+        )
+        for i, tpl in enumerate(self.templates, start=1):
+            SequenceStep.objects.create(
+                sequence=self.sequence,
+                position=i,
+                delay_days=0,
+                delay_hours=0,
+                template=tpl,
+            )
+        self.lead = Lead.objects.create(
+            first_name="Sam",
+            last_name="Lead",
+            age=28,
+            organisation=self.organisation,
+            description="x",
+            phone_number="1",
+            email="sam@example.com",
+            category=self.stage_a,
+        )
+
+    def _drain(self, max_rounds=5):
+        from email_engine.sequences import advance_due_enrollments
+
+        for _ in range(max_rounds):
+            result = advance_due_enrollments()
+            if result["processed"] == 0:
+                break
+
+    def test_three_step_sequence_enrolls_and_advances(self):
+        from email_engine.sequences import enroll_lead
+
+        enrollment = enroll_lead(self.sequence, self.lead, actor=self.owner)
+        self.assertEqual(enrollment.status, SequenceEnrollment.Status.ACTIVE)
+        self._drain()
+        enrollment.refresh_from_db()
+        self.assertEqual(enrollment.status, SequenceEnrollment.Status.COMPLETED)
+        self.assertEqual(enrollment.current_step_position, 3)
+        self.assertEqual(
+            SequenceStepSend.objects.filter(enrollment=enrollment).count(), 3
+        )
+        self.assertEqual(
+            OutboundEmail.objects.filter(organisation=self.organisation).count(),
+            3,
+        )
+        self.client.login(username="seq_owner", password="pass12345")
+        response = self.client.get(
+            reverse("leads:lead_detail", kwargs={"pk": self.lead.pk})
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Onboarding")
+        self.assertContains(response, "Completed")
+
+    def test_exit_on_stage_change_stops_further_steps(self):
+        from email_engine.sequences import advance_enrollment, enroll_lead
+
+        enrollment = enroll_lead(self.sequence, self.lead)
+        advance_enrollment(enrollment)  # step 1
+        enrollment.refresh_from_db()
+        self.assertEqual(enrollment.current_step_position, 1)
+        self.assertEqual(
+            SequenceStepSend.objects.filter(enrollment=enrollment).count(), 1
+        )
+
+        self.lead.category = self.stage_b
+        self.lead.save(update_fields=["category"])
+        enrollment.next_run_at = timezone.now()
+        enrollment.save(update_fields=["next_run_at"])
+        outcome = advance_enrollment(enrollment)
+        self.assertTrue(outcome.startswith("exited"))
+        enrollment.refresh_from_db()
+        self.assertEqual(enrollment.status, SequenceEnrollment.Status.EXITED)
+        self.assertEqual(
+            enrollment.exit_reason, SequenceEnrollment.ExitReason.STAGE_CHANGE
+        )
+        self.assertEqual(
+            SequenceStepSend.objects.filter(enrollment=enrollment).count(), 1
+        )
+
+    def test_exit_on_reply_and_unsubscribe(self):
+        from email_engine.sequences import (
+            advance_enrollment,
+            enroll_lead,
+            mark_enrollment_replied,
+            suppress_email,
+        )
+
+        enrollment = enroll_lead(self.sequence, self.lead)
+        advance_enrollment(enrollment)
+        mark_enrollment_replied(enrollment)
+        enrollment.refresh_from_db()
+        self.assertEqual(enrollment.status, SequenceEnrollment.Status.EXITED)
+        self.assertEqual(enrollment.exit_reason, SequenceEnrollment.ExitReason.REPLY)
+        self.assertEqual(
+            SequenceStepSend.objects.filter(enrollment=enrollment).count(), 1
+        )
+
+        lead2 = Lead.objects.create(
+            first_name="Pat",
+            last_name="Two",
+            age=30,
+            organisation=self.organisation,
+            description="x",
+            phone_number="2",
+            email="pat@example.com",
+            category=self.stage_a,
+        )
+        enrollment2 = enroll_lead(self.sequence, lead2)
+        advance_enrollment(enrollment2)
+        suppress_email(self.organisation, lead2.email)
+        enrollment2.next_run_at = timezone.now()
+        enrollment2.save(update_fields=["next_run_at"])
+        outcome = advance_enrollment(enrollment2)
+        self.assertEqual(outcome, "exited:unsubscribe")
+        enrollment2.refresh_from_db()
+        self.assertEqual(
+            enrollment2.exit_reason, SequenceEnrollment.ExitReason.UNSUBSCRIBE
+        )
+        self.assertEqual(
+            SequenceStepSend.objects.filter(enrollment=enrollment2).count(), 1
+        )

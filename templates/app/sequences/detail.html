@@ -1,0 +1,183 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ sequence.name }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">{{ sequence.name }}</h2>
+            <p class="text-base-content/70 mt-1">
+                Status: <span class="badge badge-ghost badge-sm">{{ sequence.get_status_display }}</span>
+                · {{ active_count }} active enrollment{{ active_count|pluralize }}
+            </p>
+        </div>
+        <a href="{% url 'sequence_index' %}" class="btn btn-ghost btn-sm">All sequences</a>
+    </div>
+
+    <div class="border border-base-300 rounded-box bg-base-100 overflow-x-auto">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Delay</th>
+                    <th>Template</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for step in steps %}
+                <tr>
+                    <td>{{ step.position }}</td>
+                    <td class="text-sm">{{ step.delay_days }}d {{ step.delay_hours }}h</td>
+                    <td>{{ step.template.name }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-base-content/60 py-6">No steps.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if form and formset %}
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save">
+        <h3 class="font-semibold">Edit draft</h3>
+        <label class="form-control max-w-md">
+            <span class="label-text">Name</span>
+            {{ form.name }}
+        </label>
+        <div class="flex flex-wrap gap-4 text-sm">
+            <label class="flex items-center gap-2">{{ form.exit_on_reply }} Exit on reply</label>
+            <label class="flex items-center gap-2">{{ form.exit_on_stage_change }} Exit on stage change</label>
+            <label class="flex items-center gap-2">{{ form.exit_on_unsubscribe }} Exit on unsubscribe</label>
+        </div>
+        {{ formset.management_form }}
+        {% for step_form in formset %}
+        <div class="grid md:grid-cols-4 gap-3 border border-base-300 rounded-box p-3">
+            {% for hidden in step_form.hidden_fields %}{{ hidden }}{% endfor %}
+            <label class="form-control"><span class="label-text text-xs">Position</span>{{ step_form.position }}</label>
+            <label class="form-control"><span class="label-text text-xs">Days</span>{{ step_form.delay_days }}</label>
+            <label class="form-control"><span class="label-text text-xs">Hours</span>{{ step_form.delay_hours }}</label>
+            <label class="form-control"><span class="label-text text-xs">Template</span>{{ step_form.template }}</label>
+            {% if step_form.DELETE %}
+            <label class="flex items-center gap-2 text-sm md:col-span-4">{{ step_form.DELETE }} Remove</label>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+    </form>
+    {% endif %}
+
+    <div class="flex flex-wrap gap-2">
+        {% if sequence.status == "draft" %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="activate">
+            <button type="submit" class="btn btn-primary btn-sm">Activate</button>
+        </form>
+        {% endif %}
+        {% if sequence.status == "active" %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="process_due">
+            <button type="submit" class="btn btn-outline btn-sm">Process due steps</button>
+        </form>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="archive">
+            <button type="submit" class="btn btn-ghost btn-sm">Archive</button>
+        </form>
+        {% endif %}
+        {% if sequence.status == "draft" or sequence.status == "archived" %}
+        <form method="post" onsubmit="return confirm('Delete this sequence?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <button type="submit" class="btn btn-ghost btn-sm text-error">Delete</button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if sequence.status == "active" %}
+    <div class="grid md:grid-cols-2 gap-4">
+        <form method="post" class="border border-base-300 rounded-box bg-base-100 p-4 space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="enroll_lead">
+            <h3 class="font-semibold">Enroll a lead</h3>
+            <select name="lead_id" class="select select-bordered select-sm w-full" required>
+                <option value="">Select lead…</option>
+                {% for lead in leads %}
+                <option value="{{ lead.pk }}">{{ lead.first_name }} {{ lead.last_name }} · {{ lead.email }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Enroll</button>
+        </form>
+        <form method="post" class="border border-base-300 rounded-box bg-base-100 p-4 space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="enroll_list">
+            <h3 class="font-semibold">Enroll a list</h3>
+            <select name="list_id" class="select select-bordered select-sm w-full" required>
+                <option value="">Select list…</option>
+                {% for item in lists %}
+                <option value="{{ item.pk }}">{{ item.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Enroll list</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Lead</th>
+                    <th>Status</th>
+                    <th>Step</th>
+                    <th>Next run</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in enrollments %}
+                <tr>
+                    <td>
+                        <a href="{% url 'leads:lead_detail' row.lead.pk %}" class="link link-hover">
+                            {{ row.lead.first_name }} {{ row.lead.last_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge badge-ghost badge-sm">{{ row.get_status_display }}</span>
+                        {% if row.exit_reason %}<span class="text-xs text-base-content/50">· {{ row.get_exit_reason_display }}</span>{% endif %}
+                    </td>
+                    <td>{{ row.current_step_position }}</td>
+                    <td class="text-sm text-base-content/60">
+                        {% if row.next_run_at %}{{ row.next_run_at|date:"M j, H:i" }}{% else %}—{% endif %}
+                    </td>
+                    <td class="flex flex-wrap gap-1">
+                        {% if row.status == "active" %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="mark_replied">
+                            <input type="hidden" name="enrollment_id" value="{{ row.pk }}">
+                            <button type="submit" class="btn btn-ghost btn-xs">Mark replied</button>
+                        </form>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="cancel_enrollment">
+                            <input type="hidden" name="enrollment_id" value="{{ row.pk }}">
+                            <button type="submit" class="btn btn-ghost btn-xs text-error">Cancel</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-base-content/60 py-8">No enrollments yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
