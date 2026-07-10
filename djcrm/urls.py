@@ -77,8 +77,11 @@ from leads.lists import (
 from leads.views import AgentHomeView, AppHomeView, SignupView, landing_page
 from leads.marketing_views import MarketingFeaturesView, MarketingPricingView
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
+urlpatterns = []
+if getattr(settings, "DJANGO_ADMIN_ENABLED", True):
+    urlpatterns.append(path("admin/", admin.site.urls))
+
+urlpatterns += [
     path("", landing_page, name="landing_page"),
     path("features/", MarketingFeaturesView.as_view(), name="marketing_features"),
     path("pricing/", MarketingPricingView.as_view(), name="marketing_pricing"),

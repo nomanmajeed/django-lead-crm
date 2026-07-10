@@ -60,6 +60,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "djcrm.admin_guard.AdminGuardMiddleware",
     "leads.middleware.TenantMiddleware",
     "leads.role_space.RoleSpaceMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -137,6 +138,41 @@ STRIPE_BILLING_SIMULATE = env.bool("STRIPE_BILLING_SIMULATE", default=True)
 
 CAPTURE_FORM_RATE_LIMIT = env.int("CAPTURE_FORM_RATE_LIMIT", default=20)
 CAPTURE_FORM_RATE_WINDOW = env.int("CAPTURE_FORM_RATE_WINDOW", default=3600)
+
+# --- Observability ---
+LOG_LEVEL = env("LOG_LEVEL", default="INFO")
+SENTRY_DSN = env("SENTRY_DSN", default="")
+SENTRY_ENVIRONMENT = env("SENTRY_ENVIRONMENT", default="production")
+SENTRY_RELEASE = env("SENTRY_RELEASE", default="")
+DJANGO_ADMIN_ENABLED = env.bool("DJANGO_ADMIN_ENABLED", default=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "structured": {
+            "format": "%(asctime)s level=%(levelname)s logger=%(name)s %(message)s",
+            "datefmt": "%Y-%m-%dT%H:%M:%SZ",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "structured",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
 
 # --- Celery / Redis ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
