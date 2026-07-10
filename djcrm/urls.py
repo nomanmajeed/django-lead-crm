@@ -26,11 +26,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.views.generic import TemplateView
-from leads.views import landing_page, SignupView
+from leads.views import AppHomeView, landing_page, SignupView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", landing_page, name="landing_page"),
+    path("app/", AppHomeView.as_view(), name="app_home"),
     path("leads/", include("leads.urls", namespace="leads")),
     path("agents/", include("agents.urls", namespace="agents")),
     path("signup/", SignupView.as_view(), name="signup"),

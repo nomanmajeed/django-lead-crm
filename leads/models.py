@@ -142,14 +142,22 @@ class Lead(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-def _unique_org_slug(base: str) -> str:
+def unique_org_slug(base: str, exclude_pk=None) -> str:
     slug = base or "organisation"
     candidate = slug
     index = 1
-    while Organisation.objects.filter(slug=candidate).exists():
+    while True:
+        qs = Organisation.objects.filter(slug=candidate)
+        if exclude_pk is not None:
+            qs = qs.exclude(pk=exclude_pk)
+        if not qs.exists():
+            return candidate
         candidate = f"{slug}-{index}"
         index += 1
-    return candidate
+
+
+def _unique_org_slug(base: str) -> str:
+    return unique_org_slug(base)
 
 
 def post_user_created_signal(sender, instance, created, **kwargs):

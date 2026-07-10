@@ -126,3 +126,35 @@ class TenantIsolationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ada")
         self.assertNotContains(response, "Bob")
+
+
+class SignupOnboardingTests(TestCase):
+    def test_signup_creates_org_membership_and_lands_on_app(self):
+        response = self.client.post(
+            reverse("signup"),
+            {
+                "username": "newco",
+                "email": "founder@newco.test",
+                "company_name": "NewCo Labs",
+                "password1": "complex-pass-12345",
+                "password2": "complex-pass-12345",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("app_home"))
+
+        user = User.objects.get(username="newco")
+        organisation = user.owned_organisation
+        self.assertEqual(organisation.name, "NewCo Labs")
+        self.assertTrue(
+            Membership.objects.filter(
+                user=user,
+                organisation=organisation,
+                role=Membership.Role.OWNER,
+            ).exists()
+        )
+
+        follow = self.client.get(reverse("app_home"))
+        self.assertEqual(follow.status_code, 200)
+        self.assertContains(follow, "NewCo Labs")
+        self.assertContains(follow, "No leads yet")

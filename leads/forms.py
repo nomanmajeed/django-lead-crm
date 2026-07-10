@@ -1,17 +1,41 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, UsernameField
+from django.utils.text import slugify
 
-from .models import Agent, Lead
+from .models import Agent, Lead, unique_org_slug
 
 User = get_user_model()
 
 
 class CustomUserCreationForm(UserCreationForm):
+    company_name = forms.CharField(
+        max_length=120,
+        label="Company name",
+        help_text="This becomes your organisation workspace.",
+    )
+    email = forms.EmailField(required=False, label="Work email")
+
     class Meta:
         model = User
-        fields = ("username",)
+        fields = ("username", "email", "company_name")
         field_classes = {"username": UsernameField}
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if commit:
+            self._apply_organisation_name(user)
+        return user
+
+    def _apply_organisation_name(self, user):
+        company_name = self.cleaned_data["company_name"].strip()
+        organisation = user.owned_organisation
+        organisation.name = company_name
+        organisation.slug = unique_org_slug(
+            slugify(company_name) or f"org-{user.pk}",
+            exclude_pk=organisation.pk,
+        )
+        organisation.save(update_fields=["name", "slug", "updated_at"])
 
 
 class LeadFrom(forms.Form):

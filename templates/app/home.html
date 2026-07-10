@@ -1,0 +1,33 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Dashboard · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
+        <h2 class="font-display text-3xl font-bold mt-1">Welcome aboard</h2>
+        <p class="text-base-content/70 mt-2 max-w-xl">
+            Your organisation is ready. Add leads and invite agents to start working the pipeline.
+        </p>
+    </div>
+
+    {% if is_empty %}
+    {% url 'leads:lead_create' as create_lead_url %}
+    {% include "partials/empty_state.html" with title="No leads yet" body="Create your first lead or invite an agent to get the workspace moving." cta_url=create_lead_url cta_label="Create first lead" %}
+    {% else %}
+    <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Leads</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ lead_count }}</p>
+            <a href="{% url 'leads:lead_list' %}" class="link link-primary text-sm mt-2 inline-block">View leads</a>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Agents</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ agent_count }}</p>
+            <a href="{% url 'agents:agent_list' %}" class="link link-primary text-sm mt-2 inline-block">Manage agents</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
