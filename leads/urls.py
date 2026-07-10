@@ -1,5 +1,6 @@
 from django.urls import path
 from .detail import lead_detail
+from .importexport import LeadExportView, LeadImportView
 from .pipeline import PipelineView
 from .views import (
     lead_list,
@@ -17,6 +18,8 @@ app_name = "leads"
 urlpatterns = [
     path("", lead_list, name="lead_list"),
     path("pipeline/", PipelineView.as_view(), name="pipeline"),
+    path("import/", LeadImportView.as_view(), name="lead_import"),
+    path("export/", LeadExportView.as_view(), name="lead_export"),
     path("<int:pk>/", lead_detail, name="lead_detail"),
     path("<int:pk>/update", lead_update, name="lead_update"),
     path("<int:pk>/delete", lead_delete, name="lead_delete"),

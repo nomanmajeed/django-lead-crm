@@ -1,0 +1,91 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Import leads · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-3xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Import leads</h2>
+        <p class="text-base-content/70 mt-2">
+            Upload a CSV, map columns, then import. Valid rows are saved; bad rows are skipped
+            and listed in the report (partial success).
+        </p>
+    </div>
+
+    {% if result %}
+    <div class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        <h3 class="font-semibold">Import complete</h3>
+        <p>{{ result.created }} lead{{ result.created|pluralize }} imported into {{ current_organisation.name }}.</p>
+        {% if result.skipped %}
+        <p class="text-sm text-base-content/70">{{ result.skipped }} row{{ result.skipped|pluralize }} skipped.</p>
+        <div class="overflow-x-auto border border-base-300 rounded-box">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Line</th>
+                        <th>Errors</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in result.errors %}
+                    <tr>
+                        <td>{{ item.line }}</td>
+                        <td>{{ item.errors|join:", " }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        <div class="flex gap-2">
+            <a href="{% url 'leads:pipeline' %}" class="btn btn-primary btn-sm">Open pipeline</a>
+            <a href="{% url 'leads:lead_import' %}" class="btn btn-outline btn-sm">Import another file</a>
+        </div>
+    </div>
+    {% elif preview %}
+    <div class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        <div>
+            <h3 class="font-semibold">Map columns</h3>
+            <p class="text-sm text-base-content/60 mt-1">
+                {{ preview.filename }} · {{ preview.rows|length }} data row{{ preview.rows|length|pluralize }}
+            </p>
+        </div>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="import">
+            {% for field, label, required in import_fields %}
+            <label class="form-control">
+                <span class="label-text">{{ label }}{% if required %} *{% endif %}</span>
+                <select name="map_{{ field }}" class="select select-bordered select-sm" {% if required %}required{% endif %}>
+                    <option value="">— skip —</option>
+                    {% for header in preview.headers %}
+                    <option value="{{ header }}"
+                        {% for gfield, gheader in guessed.items %}{% if gfield == field and gheader == header %}selected{% endif %}{% endfor %}
+                    >{{ header }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            {% endfor %}
+            <div class="flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">Import rows</button>
+                <button type="submit" name="action" value="cancel" class="btn btn-ghost btn-sm" formnovalidate>Cancel</button>
+            </div>
+        </form>
+        <p class="text-xs text-base-content/50">Detected headers: {{ preview.headers|join:", " }}</p>
+    </div>
+    {% else %}
+    <form method="post" enctype="multipart/form-data" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="upload">
+        <label class="form-control">
+            <span class="label-text">CSV file</span>
+            <input type="file" name="csv_file" accept=".csv,text/csv" required class="file-input file-input-bordered file-input-sm w-full max-w-md">
+        </label>
+        <p class="text-sm text-base-content/60">
+            Include a header row. Suggested columns: first_name, last_name, email, phone_number, age, description.
+        </p>
+        <button type="submit" class="btn btn-primary btn-sm">Upload &amp; continue</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
