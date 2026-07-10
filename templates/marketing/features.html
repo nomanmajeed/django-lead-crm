@@ -1,0 +1,39 @@
+{% extends "layouts/marketing.html" %}
+
+{% block title %}Features · Lead CRM{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-4 md:px-8 py-14 md:py-20 space-y-16">
+    <div class="max-w-2xl">
+        <p class="font-display text-4xl md:text-5xl font-bold tracking-tight">Lead CRM</p>
+        <h1 class="mt-3 text-2xl font-semibold">Everything your sales org needs in one product</h1>
+        <p class="mt-2 text-base-content/70">
+            From first lead to campaign send — organiser and agent spaces stay in sync.
+        </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-x-12 gap-y-10">
+        <div>
+            <h2 class="font-display text-xl font-bold">Pipeline &amp; lead 360</h2>
+            <p class="mt-2 text-base-content/70">Kanban stages, assignment rules, notes, tasks, and a full activity timeline per lead.</p>
+        </div>
+        <div>
+            <h2 class="font-display text-xl font-bold">Team &amp; roles</h2>
+            <p class="mt-2 text-base-content/70">Invite owners, admins, and agents. Agents get a focused workspace for assigned work.</p>
+        </div>
+        <div>
+            <h2 class="font-display text-xl font-bold">Email engine</h2>
+            <p class="mt-2 text-base-content/70">Templates, lists, one-shot campaigns, drip sequences, open/click tracking, and unsubscribe.</p>
+        </div>
+        <div>
+            <h2 class="font-display text-xl font-bold">Billing &amp; governance</h2>
+            <p class="mt-2 text-base-content/70">Plan entitlements, usage metering, notifications, audit log, and a settings hub for the org.</p>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 pt-4 border-t border-base-300">
+        <a href="{% url 'signup' %}" class="btn btn-primary">Start free</a>
+        <a href="{% url 'marketing_pricing' %}" class="btn btn-outline">Compare plans</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,18 +1,20 @@
-<header class="navbar bg-base-100 border-b border-base-300 px-4">
+<header class="navbar px-4 md:px-8 bg-base-100/80 backdrop-blur border-b border-base-300 sticky top-0 z-30">
     <div class="flex-1">
         <a href="{% url 'landing_page' %}" class="font-display text-xl font-bold tracking-tight">Lead CRM</a>
     </div>
-    <div class="flex-none gap-1">
+    <div class="flex-none gap-1 items-center">
+        <a href="{% url 'marketing_features' %}" class="btn btn-ghost btn-sm hidden sm:inline-flex">Features</a>
+        <a href="{% url 'marketing_pricing' %}" class="btn btn-ghost btn-sm hidden sm:inline-flex">Pricing</a>
         {% if request.user.is_authenticated %}
         {% if can_manage %}
-        <a href="{% url 'app_home' %}" class="btn btn-ghost btn-sm">Open app</a>
+        <a href="{% url 'app_home' %}" class="btn btn-primary btn-sm">Open app</a>
         {% elif is_agent_member %}
-        <a href="{% url 'agent_home' %}" class="btn btn-ghost btn-sm">Open workspace</a>
+        <a href="{% url 'agent_home' %}" class="btn btn-primary btn-sm">Open workspace</a>
         {% endif %}
-        <a href="{% url 'logout' %}" class="btn btn-outline btn-sm">Logout</a>
+        <a href="{% url 'logout' %}" class="btn btn-ghost btn-sm">Logout</a>
         {% else %}
-        <a href="{% url 'signup' %}" class="btn btn-ghost btn-sm">Signup</a>
-        <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Login</a>
+        <a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Login</a>
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-sm">Start free</a>
         {% endif %}
     </div>
 </header>

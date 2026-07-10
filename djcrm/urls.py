@@ -56,10 +56,13 @@ from leads.lists import (
     ContactListIndexView,
 )
 from leads.views import AgentHomeView, AppHomeView, SignupView, landing_page
+from leads.marketing_views import MarketingFeaturesView, MarketingPricingView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", landing_page, name="landing_page"),
+    path("features/", MarketingFeaturesView.as_view(), name="marketing_features"),
+    path("pricing/", MarketingPricingView.as_view(), name="marketing_pricing"),
     # Organiser app space
     path("app/", AppHomeView.as_view(), name="app_home"),
     path("app/leads/", include(("leads.urls", "leads"), namespace="leads")),

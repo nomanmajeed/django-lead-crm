@@ -1,17 +1,21 @@
 {% extends "layouts/root.html" %}
 
 {% block body %}
-<div class="min-h-screen flex flex-col">
+<div class="min-h-screen flex flex-col bg-base-200">
     {% include "partials/marketing_nav.html" %}
     {% include "partials/flash_messages.html" %}
-    <main class="flex-1">
-        <div class="max-w-7xl mx-auto px-4 py-6">
-            {% block content %}{% endblock %}
-        </div>
+    <main class="flex-1 flex flex-col">
+        {% block content %}{% endblock %}
     </main>
-    <footer class="border-t border-base-300 bg-base-100">
-        <div class="max-w-7xl mx-auto px-4 py-6 text-sm text-base-content/60">
-            {% block footer %}Lead CRM{% endblock %}
+    <footer class="border-t border-base-300 bg-base-100/80">
+        <div class="max-w-6xl mx-auto px-4 py-8 flex flex-wrap gap-4 justify-between text-sm text-base-content/60">
+            <span class="font-display font-semibold text-base-content/80">Lead CRM</span>
+            <nav class="flex flex-wrap gap-4">
+                <a href="{% url 'marketing_features' %}" class="link link-hover">Features</a>
+                <a href="{% url 'marketing_pricing' %}" class="link link-hover">Pricing</a>
+                <a href="{% url 'signup' %}" class="link link-hover">Signup</a>
+                <a href="{% url 'login' %}" class="link link-hover">Login</a>
+            </nav>
         </div>
     </footer>
 </div>
