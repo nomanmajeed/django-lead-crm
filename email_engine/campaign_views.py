@@ -13,6 +13,7 @@ from email_engine.campaigns import (
     recipient_counts,
     schedule_or_send_campaign,
 )
+from email_engine.analytics import campaign_metrics
 from email_engine.models import Campaign, EmailTemplate
 from leads.lists import resolve_list_members
 from leads.models import ContactList
@@ -143,6 +144,7 @@ class CampaignDetailView(OrganisorAndLoginRequiredMixin, View):
                 "counts": counts,
                 "preview_count": preview_count,
                 "recipients": recipients,
+                "metrics": campaign_metrics(campaign),
             },
         )
 
@@ -228,3 +230,22 @@ class CampaignDetailView(OrganisorAndLoginRequiredMixin, View):
 
         messages.error(request, "That action is not available for this campaign.")
         return redirect("campaign_detail", pk=pk)
+
+
+class CampaignReportView(OrganisorAndLoginRequiredMixin, View):
+    def get(self, request, pk):
+        campaign = get_object_or_404(
+            Campaign.objects.select_related("contact_list", "template"),
+            pk=pk,
+            organisation=request.organisation,
+        )
+        metrics = campaign_metrics(campaign)
+        return render(
+            request,
+            "app/campaigns/report.html",
+            {
+                "topbar_title": f"{campaign.name} · Report",
+                "campaign": campaign,
+                "metrics": metrics,
+            },
+        )

@@ -1,0 +1,69 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ campaign.name }} report · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm text-base-content/60">Campaign report</p>
+            <h2 class="font-display text-3xl font-bold mt-1">{{ campaign.name }}</h2>
+            <p class="text-base-content/70 mt-1">
+                {{ campaign.contact_list.name }} · {{ campaign.template.name }}
+                · <span class="badge badge-ghost badge-sm">{{ campaign.get_status_display }}</span>
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'campaign_detail' campaign.pk %}" class="btn btn-ghost btn-sm">Campaign</a>
+            <a href="{% url 'campaign_index' %}" class="btn btn-ghost btn-sm">All campaigns</a>
+        </div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Sent</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ metrics.sent }}</p>
+            <p class="text-xs text-base-content/50 mt-2">{{ metrics.delivered }} delivered</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Open rate</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ metrics.open_rate }}%</p>
+            <p class="text-xs text-base-content/50 mt-2">{{ metrics.unique_opens }} unique · {{ metrics.opens }} total</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Click rate</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ metrics.click_rate }}%</p>
+            <p class="text-xs text-base-content/50 mt-2">{{ metrics.unique_clicks }} unique · {{ metrics.clicks }} total</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Unsubs / bounces</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ metrics.unsubscribes }} / {{ metrics.bounces }}</p>
+            <p class="text-xs text-base-content/50 mt-2">
+                {{ metrics.unsubscribe_rate }}% unsub · {{ metrics.bounce_rate }}% bounce
+            </p>
+        </div>
+    </div>
+
+    <div class="border border-base-300 rounded-box bg-base-100 p-5">
+        <h3 class="font-semibold mb-3">Recipient outcomes</h3>
+        <dl class="grid sm:grid-cols-4 gap-4 text-sm">
+            <div>
+                <dt class="text-base-content/60">Recipients</dt>
+                <dd class="font-medium text-lg">{{ metrics.recipients }}</dd>
+            </div>
+            <div>
+                <dt class="text-base-content/60">Sent</dt>
+                <dd class="font-medium text-lg">{{ metrics.sent_recipients }}</dd>
+            </div>
+            <div>
+                <dt class="text-base-content/60">Failed</dt>
+                <dd class="font-medium text-lg">{{ metrics.failed_recipients }}</dd>
+            </div>
+            <div>
+                <dt class="text-base-content/60">Skipped</dt>
+                <dd class="font-medium text-lg">{{ metrics.skipped_recipients }}</dd>
+            </div>
+        </dl>
+    </div>
+</div>
+{% endblock %}

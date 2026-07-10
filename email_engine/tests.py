@@ -632,3 +632,102 @@ class EmailTrackingComplianceTests(TestCase):
         )
         self.assertEqual(outbound.status, OutboundEmail.Status.SUPPRESSED)
         self.assertIsNone(outbound.sent_at)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_PROVIDER="console",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    EMAIL_ASYNC=True,
+    PUBLIC_BASE_URL="http://testserver",
+)
+class CampaignAnalyticsTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="analytics_owner",
+            password="pass12345",
+            email="analytics@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.template = EmailTemplate.objects.create(
+            organisation=self.organisation,
+            name="Report tpl",
+            subject="Hi {{first_name}}",
+            body_html='<p><a href="https://example.com">Go</a></p>',
+            body_text="Go",
+        )
+        self.contact_list = ContactList.objects.create(
+            organisation=self.organisation,
+            name="Analytics list",
+            kind=ContactList.Kind.STATIC,
+        )
+        self.leads = []
+        for i in range(2):
+            lead = Lead.objects.create(
+                first_name=f"A{i}",
+                last_name="Lead",
+                age=20,
+                organisation=self.organisation,
+                description="x",
+                phone_number=str(i),
+                email=f"a{i}@example.com",
+            )
+            ContactListMembership.objects.create(
+                contact_list=self.contact_list, lead=lead
+            )
+            self.leads.append(lead)
+
+    def test_campaign_report_rates_match_events(self):
+        from email_engine.analytics import campaign_metrics, org_weekly_email_summary
+        from email_engine.campaigns import schedule_or_send_campaign
+        from email_engine.models import Campaign
+        from email_engine.tracking import record_click, record_open
+
+        campaign = Campaign.objects.create(
+            organisation=self.organisation,
+            name="Analytics blast",
+            contact_list=self.contact_list,
+            template=self.template,
+            status=Campaign.Status.DRAFT,
+        )
+        schedule_or_send_campaign(campaign, send_now=True)
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.status, Campaign.Status.SENT)
+
+        outbounds = list(
+            OutboundEmail.objects.filter(organisation=self.organisation, status="sent")
+        )
+        self.assertEqual(len(outbounds), 2)
+        record_open(outbounds[0])
+        record_open(outbounds[0])  # duplicate open — unique should stay 1
+        record_click(outbounds[0], "https://example.com")
+        record_open(outbounds[1])
+
+        metrics = campaign_metrics(campaign)
+        self.assertEqual(metrics["sent"], 2)
+        self.assertEqual(metrics["delivered"], 2)
+        self.assertEqual(metrics["opens"], 3)
+        self.assertEqual(metrics["unique_opens"], 2)
+        self.assertEqual(metrics["unique_clicks"], 1)
+        self.assertEqual(metrics["open_rate"], 100.0)
+        self.assertEqual(metrics["click_rate"], 50.0)
+
+        self.client.login(username="analytics_owner", password="pass12345")
+        report = self.client.get(
+            reverse("campaign_report", kwargs={"pk": campaign.pk})
+        )
+        self.assertEqual(report.status_code, 200)
+        self.assertContains(report, "100.0%")
+        self.assertContains(report, "50.0%")
+
+        week = org_weekly_email_summary(self.organisation)
+        self.assertEqual(week["sent"], 2)
+        self.assertEqual(week["opens"], 2)
+        self.assertEqual(week["clicks"], 1)
+        self.assertEqual(week["campaigns_sent"], 1)
+
+        home = self.client.get(reverse("app_home"))
+        self.assertEqual(home.status_code, 200)
+        self.assertEqual(home.context["email_week"]["sent"], 2)
+        self.assertContains(home, "Analytics blast")
