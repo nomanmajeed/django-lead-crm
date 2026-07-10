@@ -78,6 +78,9 @@
                     <p class="text-xs text-base-content/50">
                         {% if lead.agent %}{{ lead.agent.user.username }}{% else %}Unassigned{% endif %}
                     </p>
+                    {% if not lead.agent %}
+                    <a href="{% url 'leads:assign_agent' lead.pk %}" class="link link-primary text-xs">Assign agent</a>
+                    {% endif %}
                     <form method="post" action="?{{ request.GET.urlencode }}" class="pt-1">
                         {% csrf_token %}
                         <input type="hidden" name="lead_id" value="{{ lead.pk }}">
@@ -120,7 +123,13 @@
                         </a>
                     </td>
                     <td>{{ lead.email }}</td>
-                    <td>{% if lead.agent %}{{ lead.agent.user.username }}{% else %}—{% endif %}</td>
+                    <td>
+                        {% if lead.agent %}
+                        {{ lead.agent.user.username }}
+                        {% else %}
+                        <a href="{% url 'leads:assign_agent' lead.pk %}" class="link link-primary text-sm">Assign</a>
+                        {% endif %}
+                    </td>
                     <td>
                         <form method="post" action="?{{ request.GET.urlencode }}" class="flex items-center gap-2">
                             {% csrf_token %}

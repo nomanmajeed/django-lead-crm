@@ -57,6 +57,18 @@ class LeadModelFrom(forms.ModelForm):
             "email",
         )
 
+    def __init__(self, *args, **kwargs):
+        organisation = kwargs.pop("organisation", None)
+        super().__init__(*args, **kwargs)
+        self.fields["agent"].required = False
+        self.fields["agent"].empty_label = "Unassigned (auto-assign if enabled)"
+        if organisation is not None:
+            self.fields["agent"].queryset = Agent.objects.for_org(organisation)
+        elif self.instance and self.instance.pk and self.instance.organisation_id:
+            self.fields["agent"].queryset = Agent.objects.for_org(
+                self.instance.organisation
+            )
+
 
 class AssignAgentForm(forms.Form):
     agent = forms.ModelChoiceField(queryset=Agent.objects.none())
@@ -66,6 +78,9 @@ class AssignAgentForm(forms.Form):
         agents = Agent.objects.for_org(request.organisation)
         super().__init__(*args, **kwargs)
         self.fields["agent"].queryset = agents
+        self.fields["agent"].widget.attrs.update(
+            {"class": "select select-bordered select-sm w-full"}
+        )
 
 
 class LeadCategoryUpdateForm(forms.ModelForm):

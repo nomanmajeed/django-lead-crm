@@ -626,3 +626,90 @@ class LeadImportExportTests(TestCase):
         body = response.content.decode("utf-8")
         self.assertIn("keep@example.com", body)
         self.assertNotIn("drop@example.com", body)
+
+
+class AssignmentRulesTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="assign_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.agents = []
+        for name in ("agent_a", "agent_b", "agent_c"):
+            user = User.objects.create_user(
+                username=name,
+                password="pass12345",
+                is_organisor=False,
+                is_agent=True,
+            )
+            agent = Agent.objects.create(user=user, organisation=self.organisation)
+            Membership.objects.create(
+                user=user,
+                organisation=self.organisation,
+                role=Membership.Role.AGENT,
+            )
+            self.agents.append(agent)
+
+    def test_auto_assign_round_robin_on_create(self):
+        self.organisation.auto_assign_enabled = True
+        self.organisation.save(update_fields=["auto_assign_enabled"])
+        self.client.login(username="assign_owner", password="pass12345")
+
+        assigned = []
+        for i in range(6):
+            response = self.client.post(
+                reverse("leads:lead_create"),
+                {
+                    "first_name": f"L{i}",
+                    "last_name": "Auto",
+                    "age": 20,
+                    "description": "rr",
+                    "phone_number": f"100{i}",
+                    "email": f"l{i}@example.com",
+                    "agent": "",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            lead = Lead.objects.get(email=f"l{i}@example.com")
+            self.assertIsNotNone(lead.agent_id)
+            assigned.append(lead.agent_id)
+
+        # Fair rotation across the three agents
+        self.assertEqual(assigned.count(self.agents[0].pk), 2)
+        self.assertEqual(assigned.count(self.agents[1].pk), 2)
+        self.assertEqual(assigned.count(self.agents[2].pk), 2)
+
+    def test_manual_assign_overrides_and_disabled_stays_unassigned(self):
+        self.organisation.auto_assign_enabled = False
+        self.organisation.save(update_fields=["auto_assign_enabled"])
+        lead = Lead.objects.create(
+            first_name="Solo",
+            last_name="Lead",
+            age=22,
+            organisation=self.organisation,
+            description="manual",
+            phone_number="9",
+            email="solo@example.com",
+        )
+        self.assertIsNone(lead.agent_id)
+
+        self.client.login(username="assign_owner", password="pass12345")
+        response = self.client.post(
+            reverse("leads:assign_agent", kwargs={"pk": lead.pk}),
+            {"agent": self.agents[1].pk},
+        )
+        self.assertEqual(response.status_code, 302)
+        lead.refresh_from_db()
+        self.assertEqual(lead.agent_id, self.agents[1].pk)
+
+    def test_assignment_settings_toggle(self):
+        self.client.login(username="assign_owner", password="pass12345")
+        response = self.client.post(
+            reverse("assignment_settings"),
+            {"auto_assign_enabled": "on"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.organisation.refresh_from_db()
+        self.assertTrue(self.organisation.auto_assign_enabled)

@@ -41,6 +41,14 @@ class Organisation(models.Model):
     timezone = models.CharField(max_length=64, default="UTC")
     # Branding hooks (expand later with logo upload, etc.)
     primary_color = models.CharField(max_length=7, blank=True, default="#0F766E")
+    auto_assign_enabled = models.BooleanField(
+        default=False,
+        help_text="When enabled, unassigned leads are given to the next agent in round-robin order.",
+    )
+    round_robin_cursor = models.PositiveIntegerField(
+        default=0,
+        help_text="Index into the org agent list for the next auto-assignment.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

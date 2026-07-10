@@ -93,8 +93,10 @@ def _row_to_lead_data(row, mapping):
     return data, errors
 
 
-def import_rows(organisation, rows, mapping):
+def import_rows(organisation, rows, mapping, *, actor=None):
     """Import valid rows; skip bad ones. Returns (created_count, error_rows)."""
+    from leads.assignment import maybe_auto_assign
+
     created = 0
     error_rows = []
     for index, row in enumerate(rows, start=2):  # header is line 1
@@ -102,7 +104,8 @@ def import_rows(organisation, rows, mapping):
         if errors:
             error_rows.append({"line": index, "errors": errors, "row": row})
             continue
-        Lead.objects.create(organisation=organisation, agent=None, **data)
+        lead = Lead.objects.create(organisation=organisation, agent=None, **data)
+        maybe_auto_assign(lead, actor=actor)
         created += 1
     return created, error_rows
 
@@ -187,7 +190,7 @@ class LeadImportView(OrganisorAndLoginRequiredMixin, View):
                 return redirect("leads:lead_import")
 
             created, error_rows = import_rows(
-                organisation, preview["rows"], mapping
+                organisation, preview["rows"], mapping, actor=request.user
             )
             request.session.pop(SESSION_IMPORT_KEY, None)
             return render(
