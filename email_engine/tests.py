@@ -731,3 +731,116 @@ class CampaignAnalyticsTests(TestCase):
         self.assertEqual(home.status_code, 200)
         self.assertEqual(home.context["email_week"]["sent"], 2)
         self.assertContains(home, "Analytics blast")
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_PROVIDER="console",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    EMAIL_ASYNC=True,
+    PUBLIC_BASE_URL="http://testserver",
+)
+class LeadEmailActivitySyncTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="sync_owner",
+            password="pass12345",
+            email="sync@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.other = User.objects.create_user(
+            username="sync_other",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.other_org = Organisation.objects.get(owner=self.other)
+        self.template = EmailTemplate.objects.create(
+            organisation=self.organisation,
+            name="Sync tpl",
+            subject="Hello {{first_name}}",
+            body_html='<p><a href="https://example.com/p">Ping</a></p>',
+            body_text="Ping",
+        )
+        self.contact_list = ContactList.objects.create(
+            organisation=self.organisation,
+            name="Sync list",
+            kind=ContactList.Kind.STATIC,
+        )
+        self.lead = Lead.objects.create(
+            first_name="Jamie",
+            last_name="Sync",
+            age=33,
+            organisation=self.organisation,
+            description="x",
+            phone_number="1",
+            email="jamie@example.com",
+        )
+        ContactListMembership.objects.create(
+            contact_list=self.contact_list, lead=self.lead
+        )
+        # Same email in another org — must not receive timeline noise
+        Lead.objects.create(
+            first_name="Other",
+            last_name="Jamie",
+            age=33,
+            organisation=self.other_org,
+            description="x",
+            phone_number="2",
+            email="jamie@example.com",
+        )
+
+    def test_campaign_send_updates_timeline_and_last_emailed(self):
+        from email_engine.campaigns import schedule_or_send_campaign
+        from email_engine.models import Campaign
+        from email_engine.tracking import record_click, record_open
+        from leads.models import LeadActivity
+
+        self.assertIsNone(self.lead.last_emailed_at)
+        campaign = Campaign.objects.create(
+            organisation=self.organisation,
+            name="Sync blast",
+            contact_list=self.contact_list,
+            template=self.template,
+            status=Campaign.Status.DRAFT,
+        )
+        schedule_or_send_campaign(campaign, send_now=True)
+        self.lead.refresh_from_db()
+        self.assertIsNotNone(self.lead.last_emailed_at)
+        self.assertTrue(
+            LeadActivity.objects.filter(
+                lead=self.lead, kind=LeadActivity.Kind.EMAIL_SENT
+            ).exists()
+        )
+
+        outbound = OutboundEmail.objects.get(
+            organisation=self.organisation, to_email="jamie@example.com"
+        )
+        record_open(outbound)
+        record_click(outbound, "https://example.com/p")
+        self.assertTrue(
+            LeadActivity.objects.filter(
+                lead=self.lead, kind=LeadActivity.Kind.EMAIL_OPEN
+            ).exists()
+        )
+        self.assertTrue(
+            LeadActivity.objects.filter(
+                lead=self.lead, kind=LeadActivity.Kind.EMAIL_CLICK
+            ).exists()
+        )
+        # Other org lead untouched
+        other_lead = Lead.objects.get(
+            organisation=self.other_org, email="jamie@example.com"
+        )
+        self.assertIsNone(other_lead.last_emailed_at)
+        self.assertFalse(other_lead.activities.filter(kind__startswith="email_").exists())
+
+        self.client.login(username="sync_owner", password="pass12345")
+        detail = self.client.get(
+            reverse("leads:lead_detail", kwargs={"pk": self.lead.pk})
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertContains(detail, "Sync blast")
+        self.assertContains(detail, "Email sent")
+        self.assertContains(detail, "Opened email")
+        self.assertContains(detail, "Last emailed")

@@ -118,6 +118,9 @@ def deliver_outbound_email(outbound_id: int) -> OutboundEmail:
             event_type=EmailDeliveryEvent.EventType.SENT,
             payload={"source": "provider_send"},
         )
+        from email_engine.lead_sync import sync_email_sent
+
+        sync_email_sent(outbound)
     else:
         outbound.status = OutboundEmail.Status.FAILED
         outbound.error_message = result.error_message
