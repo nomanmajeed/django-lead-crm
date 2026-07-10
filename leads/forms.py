@@ -2,8 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, UsernameField
 
-from .models import Lead, Agent
-from .permissions import get_user_organisation
+from .models import Agent, Lead
 
 User = get_user_model()
 
@@ -40,8 +39,7 @@ class AssignAgentForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop("request")
-        organisation = get_user_organisation(request.user)
-        agents = Agent.objects.filter(organisation=organisation)
+        agents = Agent.objects.for_org(request.organisation)
         super().__init__(*args, **kwargs)
         self.fields["agent"].queryset = agents
 
