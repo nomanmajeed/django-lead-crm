@@ -207,13 +207,16 @@ def lead_list(request):
 @login_required
 @user_is_organisor
 def lead_create(request):
-    form = LeadModelFrom()
+    form = LeadModelFrom(organisation=request.organisation)
     if request.method == "POST":
-        form = LeadModelFrom(request.POST)
+        form = LeadModelFrom(request.POST, organisation=request.organisation)
         if form.is_valid():
+            from leads.assignment import maybe_auto_assign
+
             lead = form.save(commit=False)
             lead.organisation = request.organisation
             lead.save()
+            maybe_auto_assign(lead, actor=request.user)
             send_mail(
                 subject="Lead Created",
                 message="Visit homepage to see new lead",
@@ -229,10 +232,12 @@ def lead_create(request):
 @user_is_organisor
 def lead_update(request, pk):
     lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
-    form = LeadModelFrom(instance=lead)
+    form = LeadModelFrom(instance=lead, organisation=request.organisation)
 
     if request.method == "POST":
-        form = LeadModelFrom(request.POST, instance=lead)
+        form = LeadModelFrom(
+            request.POST, instance=lead, organisation=request.organisation
+        )
         if form.is_valid():
             form.save()
             return redirect(reverse("leads:lead_list"))
@@ -260,24 +265,22 @@ class AssignAgentView(OrganisorAndLoginRequiredMixin, generic.FormView):
         return kwargs
 
     def get_success_url(self):
-        return reverse("leads:lead_list")
+        return reverse("leads:pipeline")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["topbar_title"] = "Assign agent"
+        return context
 
     def form_valid(self, form):
+        from leads.assignment import assign_lead_to_agent
+
         agent = form.cleaned_data["agent"]
         lead = get_object_or_404(
             Lead.objects.for_org(self.request.organisation),
             pk=self.kwargs["pk"],
         )
-        lead.agent = agent
-        lead.save()
-        from leads.models import LeadActivity, record_lead_activity
-
-        record_lead_activity(
-            lead,
-            kind=LeadActivity.Kind.ASSIGNMENT,
-            summary=f"Assigned to {agent.user.username}",
-            actor=self.request.user,
-        )
+        assign_lead_to_agent(lead, agent, actor=self.request.user)
         return super().form_valid(form)
 
 

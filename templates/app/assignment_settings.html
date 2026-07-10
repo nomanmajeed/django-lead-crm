@@ -1,0 +1,47 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Assignment · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Assignment rules</h2>
+        <p class="text-base-content/70 mt-2">
+            Manual assign always works. Optionally auto-assign new unassigned leads
+            with round-robin across your agents.
+        </p>
+    </div>
+
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        <label class="label cursor-pointer justify-start gap-3">
+            <input type="checkbox" name="auto_assign_enabled" class="toggle toggle-primary"
+                   {% if organisation.auto_assign_enabled %}checked{% endif %}>
+            <span class="label-text">
+                Enable round-robin auto-assign for unassigned leads
+            </span>
+        </label>
+        <p class="text-sm text-base-content/60">
+            Applies on lead create and CSV import when no agent is chosen.
+            Cursor position: {{ organisation.round_robin_cursor }}
+        </p>
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+    </form>
+
+    <section class="border border-base-300 rounded-box bg-base-100">
+        <div class="px-5 py-4 border-b border-base-300">
+            <h3 class="font-semibold">Active agents ({{ agents|length }})</h3>
+        </div>
+        <ul class="divide-y divide-base-300">
+            {% for agent in agents %}
+            <li class="px-5 py-3 text-sm">{{ agent.user.username }}</li>
+            {% empty %}
+            <li class="px-5 py-8 text-center text-base-content/60">
+                No agents yet.
+                <a href="{% url 'agents:agent_create' %}" class="link link-primary block mt-2">Add an agent</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

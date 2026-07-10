@@ -13,6 +13,7 @@ from django.contrib.auth.views import (
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
+from leads.assignment_views import AssignmentSettingsView
 from leads.auth_views import RoleBasedLoginView
 from leads.invites import (
     InviteAcceptView,
@@ -45,6 +46,11 @@ urlpatterns = [
         "app/team/invites/<int:pk>/resend/",
         TeamInviteResendView.as_view(),
         name="team_invite_resend",
+    ),
+    path(
+        "app/settings/assignment/",
+        AssignmentSettingsView.as_view(),
+        name="assignment_settings",
     ),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),
