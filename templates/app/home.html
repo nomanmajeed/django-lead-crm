@@ -4,29 +4,97 @@
 
 {% block content %}
 <div class="space-y-8">
-    <div>
-        <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
-        <h2 class="font-display text-3xl font-bold mt-1">Welcome aboard</h2>
-        <p class="text-base-content/70 mt-2 max-w-xl">
-            Your organisation is ready. Add leads and invite agents to start working the pipeline.
-        </p>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
+            <h2 class="font-display text-3xl font-bold mt-1">Dashboard</h2>
+            <p class="text-base-content/70 mt-2 max-w-xl">
+                Pipeline health for your workspace. Campaign metrics light up in Phase 3.
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'leads:lead_create' %}" class="btn btn-primary btn-sm">Add lead</a>
+            <a href="{% url 'team_invite_create' %}" class="btn btn-outline btn-sm">Invite</a>
+            <button type="button" class="btn btn-ghost btn-sm" disabled title="Coming in Phase 3">New campaign</button>
+        </div>
     </div>
 
     {% if is_empty %}
     {% url 'leads:lead_create' as create_lead_url %}
     {% include "partials/empty_state.html" with title="No leads yet" body="Create your first lead or invite an agent to get the workspace moving." cta_url=create_lead_url cta_label="Create first lead" %}
     {% else %}
-    <div class="grid sm:grid-cols-2 gap-4 max-w-xl">
+    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
-            <p class="text-sm text-base-content/60">Leads</p>
-            <p class="font-display text-3xl font-bold mt-1">{{ lead_count }}</p>
-            <a href="{% url 'leads:lead_list' %}" class="link link-primary text-sm mt-2 inline-block">View leads</a>
+            <p class="text-sm text-base-content/60">New leads (7d)</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ new_leads }}</p>
         </div>
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
-            <p class="text-sm text-base-content/60">Agents</p>
-            <p class="font-display text-3xl font-bold mt-1">{{ agent_count }}</p>
-            <a href="{% url 'agents:agent_list' %}" class="link link-primary text-sm mt-2 inline-block">Manage agents</a>
+            <p class="text-sm text-base-content/60">Open pipeline</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ open_pipeline }}</p>
+            {% if unassigned_count %}
+            <p class="text-xs text-base-content/50 mt-2">{{ unassigned_count }} unassigned</p>
+            {% endif %}
         </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Conversion</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ conversion_rate }}%</p>
+            <p class="text-xs text-base-content/50 mt-2">Category “Converted”</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Campaign sends</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ campaign_sends }}</p>
+            <p class="text-xs text-base-content/50 mt-2">Coming in Phase 3</p>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <section class="border border-base-300 rounded-box bg-base-100">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-base-300">
+                <h3 class="font-semibold">Recent leads</h3>
+                <a href="{% url 'leads:lead_list' %}" class="link link-primary text-sm">View all</a>
+            </div>
+            <ul class="divide-y divide-base-300">
+                {% for lead in recent_leads %}
+                <li class="px-5 py-3 flex items-center justify-between gap-3">
+                    <div>
+                        <a href="{% url 'leads:lead_detail' lead.pk %}" class="font-medium link link-hover">
+                            {{ lead.first_name }} {{ lead.last_name }}
+                        </a>
+                        <p class="text-xs text-base-content/60">{{ lead.email }}</p>
+                    </div>
+                    <span class="text-xs text-base-content/50 whitespace-nowrap">{{ lead.date_added|date:"M j" }}</span>
+                </li>
+                {% empty %}
+                <li class="px-5 py-8 text-center text-base-content/60">No leads yet.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="border border-base-300 rounded-box bg-base-100">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-base-300">
+                <h3 class="font-semibold">Team activity</h3>
+                <a href="{% url 'team' %}" class="link link-primary text-sm">Team</a>
+            </div>
+            <ul class="divide-y divide-base-300">
+                {% for invite in recent_invites %}
+                <li class="px-5 py-3 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="font-medium">{{ invite.email }}</p>
+                        <p class="text-xs text-base-content/60">
+                            Invited as {{ invite.get_role_display }}
+                            {% if invite.accepted_at %}· accepted{% elif invite.revoked_at %}· revoked{% else %}· pending{% endif %}
+                        </p>
+                    </div>
+                    <span class="text-xs text-base-content/50 whitespace-nowrap">{{ invite.created_at|date:"M j" }}</span>
+                </li>
+                {% empty %}
+                <li class="px-5 py-8 text-center text-base-content/60">
+                    No invites yet.
+                    <a href="{% url 'team_invite_create' %}" class="link link-primary block mt-2">Invite a teammate</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
     </div>
     {% endif %}
 </div>
