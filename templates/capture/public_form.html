@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="leadcrm">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ capture_form.name }} · {{ capture_form.organisation.name }}</title>
+    <link href="/static/css/main.css" rel="stylesheet">
+    <style>
+        .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    </style>
+</head>
+<body class="{% if embed %}bg-transparent{% else %}bg-base-200{% endif %} min-h-screen p-4 md:p-6">
+    <div class="max-w-md mx-auto">
+        <form method="post" class="space-y-4 {% if not embed %}border border-base-300 rounded-box bg-base-100 p-6{% endif %}">
+            {% csrf_token %}
+            <div class="hp-field" aria-hidden="true">
+                <label for="id_company_url">Company URL</label>
+                {{ form.company_url }}
+            </div>
+            {% if not embed %}
+            <div>
+                <h1 class="font-display text-2xl font-bold">{{ capture_form.name }}</h1>
+                <p class="text-sm text-base-content/60 mt-1">{{ capture_form.organisation.name }}</p>
+            </div>
+            {% endif %}
+            {% for field in form.visible_fields %}
+            <label class="form-control w-full">
+                <span class="label-text">{{ field.label|default:field.name|title }}</span>
+                {{ field }}
+                {% for error in field.errors %}
+                <span class="text-error text-sm">{{ error }}</span>
+                {% endfor %}
+            </label>
+            {% endfor %}
+            {% if form.non_field_errors %}
+            <p class="text-error text-sm">{{ form.non_field_errors }}</p>
+            {% endif %}
+            <button type="submit" class="btn btn-primary w-full">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

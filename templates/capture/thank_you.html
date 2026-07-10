@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="leadcrm">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank you · {{ capture_form.organisation.name }}</title>
+    <link href="/static/css/main.css" rel="stylesheet">
+</head>
+<body class="{% if embed %}bg-transparent{% else %}bg-base-200{% endif %} min-h-screen p-6 flex items-center justify-center">
+    <div class="max-w-md text-center {% if not embed %}border border-base-300 rounded-box bg-base-100 p-8{% endif %}">
+        <p class="font-display text-2xl font-bold">Thank you</p>
+        <p class="text-base-content/70 mt-2">Your details were received. We'll be in touch soon.</p>
+    </div>
+</body>
+</html>

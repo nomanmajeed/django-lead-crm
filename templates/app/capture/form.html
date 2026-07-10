@@ -1,0 +1,26 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ heading }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-xl space-y-6">
+    <div>
+        <h2 class="font-display text-3xl font-bold">{{ heading }}</h2>
+        <p class="text-base-content/70 mt-1">Choose fields and optional sequence auto-enroll.</p>
+    </div>
+    <form method="post" class="space-y-4 border border-base-300 rounded-box bg-base-100 p-5">
+        {% csrf_token %}
+        {% for field in form %}
+        <label class="form-control w-full">
+            <span class="label-text">{{ field.label }}</span>
+            {{ field }}
+            {% for error in field.errors %}
+            <span class="text-error text-sm">{{ error }}</span>
+            {% endfor %}
+        </label>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{% url 'capture_index' %}" class="btn btn-ghost">Cancel</a>
+    </form>
+</div>
+{% endblock %}
