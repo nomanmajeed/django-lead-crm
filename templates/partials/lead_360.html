@@ -1,0 +1,158 @@
+{# Shared lead 360 content. Expects lead, notes, open_tasks, done_tasks, timeline, custom_*, is_agent_space #}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm text-base-content/60">Lead</p>
+            <h2 class="font-display text-3xl font-bold mt-1">{{ lead.first_name }} {{ lead.last_name }}</h2>
+            <p class="text-base-content/70 mt-1">{{ lead.email }} · {{ lead.phone_number }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            {% if is_agent_space %}
+            <a href="{% url 'agent_leads:category_update' pk=lead.id %}" class="btn btn-outline btn-sm">Update stage</a>
+            <a href="{% url 'agent_leads:lead_list' %}" class="btn btn-ghost btn-sm">Back</a>
+            {% else %}
+            <a href="{% url 'leads:lead_update' pk=lead.id %}" class="btn btn-outline btn-sm">Edit</a>
+            <a href="{% url 'leads:category_update' pk=lead.id %}" class="btn btn-outline btn-sm">Update stage</a>
+            <a href="{% url 'leads:pipeline' %}" class="btn btn-ghost btn-sm">Pipeline</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 space-y-6">
+            <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
+                <h3 class="font-semibold">Details</h3>
+                <div class="flex justify-between gap-3 text-sm">
+                    <span class="text-base-content/60">Age</span>
+                    <span>{{ lead.age }}</span>
+                </div>
+                <div class="flex justify-between gap-3 text-sm">
+                    <span class="text-base-content/60">Stage</span>
+                    <span>{% if lead.category %}{{ lead.category.name }}{% else %}Uncategorized{% endif %}</span>
+                </div>
+                <div class="flex justify-between gap-3 text-sm">
+                    <span class="text-base-content/60">Agent</span>
+                    <span>{% if lead.agent %}{{ lead.agent.user.username }}{% else %}Unassigned{% endif %}</span>
+                </div>
+                {% if lead.description %}
+                <p class="text-sm text-base-content/70 pt-2 border-t border-base-300">{{ lead.description }}</p>
+                {% endif %}
+            </section>
+
+            <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
+                <h3 class="font-semibold">Custom fields</h3>
+                <form method="post" class="space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_custom_fields">
+                    <label class="form-control">
+                        <span class="label-text text-xs">Company</span>
+                        <input name="company" value="{{ custom_company }}" class="input input-bordered input-sm">
+                    </label>
+                    <label class="form-control">
+                        <span class="label-text text-xs">Source</span>
+                        <input name="source" value="{{ custom_source }}" class="input input-bordered input-sm">
+                    </label>
+                    <button type="submit" class="btn btn-outline btn-sm">Save fields</button>
+                </form>
+            </section>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            <section class="border border-base-300 rounded-box bg-base-100">
+                <div class="px-5 py-4 border-b border-base-300">
+                    <h3 class="font-semibold">Tasks</h3>
+                </div>
+                <div class="p-5 space-y-4">
+                    <form method="post" class="flex flex-wrap gap-2 items-end">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_task">
+                        <label class="form-control grow min-w-48">
+                            <span class="label-text text-xs">New task</span>
+                            <input name="title" required class="input input-bordered input-sm" placeholder="Follow up call">
+                        </label>
+                        <label class="form-control">
+                            <span class="label-text text-xs">Due</span>
+                            <input type="datetime-local" name="due_at" class="input input-bordered input-sm">
+                        </label>
+                        <button type="submit" class="btn btn-primary btn-sm">Add</button>
+                    </form>
+                    <ul class="divide-y divide-base-300 border border-base-300 rounded-box">
+                        {% for task in open_tasks %}
+                        <li class="px-4 py-3 flex items-center justify-between gap-3">
+                            <div>
+                                <p class="font-medium">{{ task.title }}</p>
+                                {% if task.due_at %}
+                                <p class="text-xs text-base-content/60">Due {{ task.due_at|date:"M j, g:i A" }}</p>
+                                {% endif %}
+                            </div>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="complete_task">
+                                <input type="hidden" name="task_id" value="{{ task.pk }}">
+                                <button type="submit" class="btn btn-outline btn-xs">Complete</button>
+                            </form>
+                        </li>
+                        {% empty %}
+                        <li class="px-4 py-6 text-sm text-base-content/60 text-center">No open tasks.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if done_tasks %}
+                    <div>
+                        <p class="text-xs text-base-content/50 mb-2">Recently completed</p>
+                        <ul class="text-sm text-base-content/70 space-y-1">
+                            {% for task in done_tasks %}
+                            <li class="line-through">{{ task.title }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="border border-base-300 rounded-box bg-base-100">
+                <div class="px-5 py-4 border-b border-base-300">
+                    <h3 class="font-semibold">Notes</h3>
+                </div>
+                <div class="p-5 space-y-4">
+                    <form method="post" class="space-y-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="add_note">
+                        <textarea name="body" rows="3" required class="textarea textarea-bordered w-full" placeholder="Add a note…"></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm">Add note</button>
+                    </form>
+                    <ul class="space-y-3">
+                        {% for note in notes %}
+                        <li class="border border-base-300 rounded-box p-3">
+                            <p class="text-sm whitespace-pre-wrap">{{ note.body }}</p>
+                            <p class="text-xs text-base-content/50 mt-2">
+                                {{ note.author.username }} · {{ note.created_at|date:"M j, Y g:i A" }}
+                            </p>
+                        </li>
+                        {% empty %}
+                        <li class="text-sm text-base-content/60">No notes yet.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </section>
+
+            <section class="border border-base-300 rounded-box bg-base-100">
+                <div class="px-5 py-4 border-b border-base-300">
+                    <h3 class="font-semibold">Timeline</h3>
+                </div>
+                <ul class="divide-y divide-base-300">
+                    {% for event in timeline %}
+                    <li class="px-5 py-3 flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-medium">{{ event.summary }}</p>
+                            <p class="text-xs text-base-content/50">{{ event.get_kind_display }}{% if event.actor %} · {{ event.actor.username }}{% endif %}</p>
+                        </div>
+                        <span class="text-xs text-base-content/50 whitespace-nowrap">{{ event.created_at|date:"M j, g:i A" }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="px-5 py-8 text-center text-sm text-base-content/60">Activity will show here as you work the lead.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>

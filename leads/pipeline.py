@@ -115,6 +115,14 @@ class PipelineView(OrganisorAndLoginRequiredMixin, View):
             lead.category = category
             stage_label = category.name
         lead.save(update_fields=["category"])
+        from leads.models import LeadActivity, record_lead_activity
+
+        record_lead_activity(
+            lead,
+            kind=LeadActivity.Kind.STATUS,
+            summary=f"Stage set to {stage_label}",
+            actor=request.user,
+        )
         messages.success(
             request,
             f"Moved {lead.first_name} {lead.last_name} to {stage_label}.",

@@ -173,6 +173,7 @@ class Lead(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField()
+    custom_fields = models.JSONField(default=dict, blank=True)
 
     objects = TenantManager()
 
@@ -182,6 +183,80 @@ class Lead(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+
+class LeadNote(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="notes")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lead_notes")
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Note on {self.lead_id} by {self.author_id}"
+
+
+class LeadTask(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=200)
+    due_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_lead_tasks"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["completed_at", "due_at", "-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_complete(self):
+        return self.completed_at is not None
+
+
+class LeadActivity(models.Model):
+    class Kind(models.TextChoices):
+        NOTE = "note", "Note"
+        TASK_CREATED = "task_created", "Task created"
+        TASK_COMPLETED = "task_completed", "Task completed"
+        STATUS = "status", "Status change"
+        ASSIGNMENT = "assignment", "Assignment"
+        CUSTOM = "custom", "Custom field"
+
+    lead = models.ForeignKey(
+        Lead, on_delete=models.CASCADE, related_name="activities"
+    )
+    actor = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="lead_activities",
+    )
+    kind = models.CharField(max_length=32, choices=Kind.choices)
+    summary = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "Lead activities"
+
+    def __str__(self):
+        return self.summary
+
+
+def record_lead_activity(lead, *, kind, summary, actor=None):
+    return LeadActivity.objects.create(
+        lead=lead,
+        actor=actor,
+        kind=kind,
+        summary=summary,
+    )
 
 
 def unique_org_slug(base: str, exclude_pk=None) -> str:

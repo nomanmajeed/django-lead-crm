@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from .models import Agent, Category, Invite, Lead, Membership, Organisation, User
+from .models import (
+    Agent,
+    Category,
+    Invite,
+    Lead,
+    LeadActivity,
+    LeadNote,
+    LeadTask,
+    Membership,
+    Organisation,
+    User,
+)
 
 
 @admin.register(Organisation)
@@ -47,6 +58,25 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ("username", "email", "is_organisor", "is_agent", "is_staff")
     list_filter = ("is_organisor", "is_agent", "is_staff")
     search_fields = ("username", "email")
+
+
+@admin.register(LeadNote)
+class LeadNoteAdmin(admin.ModelAdmin):
+    list_display = ("lead", "author", "created_at")
+    raw_id_fields = ("lead", "author")
+
+
+@admin.register(LeadTask)
+class LeadTaskAdmin(admin.ModelAdmin):
+    list_display = ("title", "lead", "due_at", "completed_at", "created_by")
+    raw_id_fields = ("lead", "created_by")
+
+
+@admin.register(LeadActivity)
+class LeadActivityAdmin(admin.ModelAdmin):
+    list_display = ("summary", "kind", "lead", "actor", "created_at")
+    list_filter = ("kind",)
+    raw_id_fields = ("lead", "actor")
 
 
 admin.site.register(Agent)
