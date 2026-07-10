@@ -7,6 +7,7 @@ class OutboundEmail(models.Model):
         QUEUED = "queued", "Queued"
         SENT = "sent", "Sent"
         FAILED = "failed", "Failed"
+        SUPPRESSED = "suppressed", "Suppressed"
 
     organisation = models.ForeignKey(
         "leads.Organisation",
@@ -26,6 +27,8 @@ class OutboundEmail(models.Model):
         max_length=16, choices=Status.choices, default=Status.QUEUED
     )
     error_message = models.TextField(blank=True)
+    tracking_token = models.UUIDField(null=True, blank=True, unique=True, db_index=True)
+    tracking_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
 
@@ -45,6 +48,7 @@ class EmailDeliveryEvent(models.Model):
         OPEN = "open", "Open"
         CLICK = "click", "Click"
         FAILED = "failed", "Failed"
+        UNSUBSCRIBE = "unsubscribe", "Unsubscribe"
 
     outbound_email = models.ForeignKey(
         OutboundEmail,

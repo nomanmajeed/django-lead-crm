@@ -117,6 +117,8 @@ EMAIL_ASYNC = env.bool("EMAIL_ASYNC", default=True)
 # One-shot campaign batching / rate limiting
 CAMPAIGN_BATCH_SIZE = env.int("CAMPAIGN_BATCH_SIZE", default=25)
 CAMPAIGN_BATCH_DELAY_SECONDS = env.int("CAMPAIGN_BATCH_DELAY_SECONDS", default=1)
+# Absolute base URL for open/click/unsubscribe links in emails
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="http://127.0.0.1:8001")
 
 # --- Celery / Redis ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")

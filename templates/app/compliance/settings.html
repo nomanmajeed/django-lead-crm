@@ -1,0 +1,72 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Email compliance · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-2xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Email compliance</h2>
+        <p class="text-base-content/70 mt-1">
+            Physical address for marketing footers and the org suppression list.
+        </p>
+    </div>
+
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_address">
+        <h3 class="font-semibold">Physical address</h3>
+        <p class="text-sm text-base-content/60">Shown in campaign and sequence email footers.</p>
+        <label class="form-control">
+            {{ form.physical_address }}
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm">Save address</button>
+    </form>
+
+    <div class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        <h3 class="font-semibold">Suppression list</h3>
+        <form method="post" class="flex flex-wrap gap-2 items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_suppression">
+            <label class="form-control grow">
+                <span class="label-text text-xs">Email</span>
+                <input type="email" name="email" required class="input input-bordered input-sm w-full" placeholder="person@example.com">
+            </label>
+            <button type="submit" class="btn btn-outline btn-sm">Add</button>
+        </form>
+
+        <div class="overflow-x-auto">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Reason</th>
+                        <th>Added</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in suppressions %}
+                    <tr>
+                        <td>{{ row.email }}</td>
+                        <td class="text-sm text-base-content/60">{{ row.reason }}</td>
+                        <td class="text-sm text-base-content/60">{{ row.created_at|date:"M j, Y" }}</td>
+                        <td>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove_suppression">
+                                <input type="hidden" name="suppression_id" value="{{ row.pk }}">
+                                <button type="submit" class="btn btn-ghost btn-xs text-error">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-base-content/60 py-6">No suppressed addresses.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

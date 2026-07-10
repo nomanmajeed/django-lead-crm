@@ -1,5 +1,7 @@
 """Transactional email API used by the rest of the product."""
 
+import uuid
+
 from django.conf import settings
 from django.utils import timezone
 
@@ -16,12 +18,34 @@ def queue_transactional_email(
     organisation=None,
     from_email: str | None = None,
     async_send: bool | None = None,
+    track: bool = False,
+    respect_suppression: bool = False,
 ):
     """
     Persist an outbound email and send via Celery (or eagerly in local/dev).
 
-    Returns the OutboundEmail row.
+    When respect_suppression=True and the address is suppressed, the row is
+    stored as SUPPRESSED and nothing is sent.
+    When track=True, open/click/unsubscribe instrumentation is applied on deliver.
     """
+    to_email = (to_email or "").strip()
+    if respect_suppression and organisation is not None:
+        from email_engine.sequences import is_email_suppressed
+
+        if is_email_suppressed(organisation, to_email):
+            return OutboundEmail.objects.create(
+                organisation=organisation,
+                to_email=to_email,
+                from_email=from_email or default_from_email(),
+                subject=subject,
+                body_text=body_text,
+                body_html=body_html,
+                provider=get_email_provider().name,
+                status=OutboundEmail.Status.SUPPRESSED,
+                error_message="Address is on the suppression list",
+                tracking_enabled=False,
+            )
+
     provider = get_email_provider()
     outbound = OutboundEmail.objects.create(
         organisation=organisation,
@@ -32,6 +56,8 @@ def queue_transactional_email(
         body_html=body_html,
         provider=provider.name,
         status=OutboundEmail.Status.QUEUED,
+        tracking_enabled=track,
+        tracking_token=uuid.uuid4() if track else None,
     )
 
     use_async = (
@@ -52,7 +78,18 @@ def queue_transactional_email(
 
 
 def deliver_outbound_email(outbound_id: int) -> OutboundEmail:
-    outbound = OutboundEmail.objects.get(pk=outbound_id)
+    outbound = OutboundEmail.objects.select_related("organisation").get(
+        pk=outbound_id
+    )
+    if outbound.status == OutboundEmail.Status.SUPPRESSED:
+        return outbound
+
+    if outbound.tracking_enabled:
+        from email_engine.tracking import apply_tracking
+
+        apply_tracking(outbound)
+        outbound.refresh_from_db()
+
     provider = get_email_provider(outbound.provider)
     result = provider.send(
         to_email=outbound.to_email,
