@@ -87,3 +87,13 @@ make css-watch    # rebuild on change
 ```
 
 Do not use the old Tailwind CDN — templates load the built stylesheet only.
+
+## Layout shells (ticket 05)
+
+| Layout | Path | Sample |
+|--------|------|--------|
+| Marketing | `templates/layouts/marketing.html` | `/ui/marketing/` |
+| Organiser app | `templates/layouts/app.html` | `/ui/app/` |
+| Agent | `templates/layouts/agent.html` | `/ui/agent/` |
+
+Shared partials live in `templates/partials/` (nav, flash messages, empty state, modal).

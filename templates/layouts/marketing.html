@@ -1,0 +1,18 @@
+{% extends "layouts/root.html" %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col">
+    {% include "partials/marketing_nav.html" %}
+    {% include "partials/flash_messages.html" %}
+    <main class="flex-1">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    <footer class="border-t border-base-300 bg-base-100">
+        <div class="max-w-7xl mx-auto px-4 py-6 text-sm text-base-content/60">
+            {% block footer %}Lead CRM{% endblock %}
+        </div>
+    </footer>
+</div>
+{% endblock %}

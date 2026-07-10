@@ -1,0 +1,47 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Organiser shell · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="badge badge-outline mb-2">layouts/app.html</p>
+            <h2 class="font-display text-3xl font-bold">Organiser dashboard</h2>
+            <p class="text-base-content/70 mt-1">Sidebar + topbar shell for owners and admins.</p>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('app-modal').showModal()">
+            Open modal
+        </button>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Lead</th>
+                    <th>Stage</th>
+                    <th>Owner</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="hover">
+                    <td>Ada Lovelace</td>
+                    <td><span class="badge badge-info badge-sm">New</span></td>
+                    <td>Unassigned</td>
+                    <td><a href="#" class="link link-primary text-sm">View</a></td>
+                </tr>
+                <tr class="hover">
+                    <td>Grace Hopper</td>
+                    <td><span class="badge badge-success badge-sm">Qualified</span></td>
+                    <td>Alex</td>
+                    <td><a href="#" class="link link-primary text-sm">View</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% include "partials/empty_state.html" with title="No campaigns yet" body="Campaigns land in a later ticket. This empty state is the shared pattern." cta_url="#" cta_label="Create campaign" %}
+</div>
+{% endblock %}

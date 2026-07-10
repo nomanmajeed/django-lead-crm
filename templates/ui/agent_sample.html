@@ -1,0 +1,39 @@
+{% extends "layouts/agent.html" %}
+
+{% block title %}Agent shell · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <p class="badge badge-outline mb-2">layouts/agent.html</p>
+        <h2 class="font-display text-3xl font-bold">Agent workspace</h2>
+        <p class="text-base-content/70 mt-1">Focused shell for assigned leads and follow-ups.</p>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>My lead</th>
+                    <th>Status</th>
+                    <th>Next step</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="hover">
+                    <td>Jordan Lee</td>
+                    <td><span class="badge badge-warning badge-sm">Follow up</span></td>
+                    <td>Call before Friday</td>
+                </tr>
+                <tr class="hover">
+                    <td>Sam Rivera</td>
+                    <td><span class="badge badge-info badge-sm">Contacted</span></td>
+                    <td>Send proposal</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% include "partials/empty_state.html" with title="No tasks due" body="When tasks ship, agents will see due items here." %}
+</div>
+{% endblock %}

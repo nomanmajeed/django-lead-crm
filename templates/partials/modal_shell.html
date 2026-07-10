@@ -1,0 +1,16 @@
+{# Shared modal shell — open with: document.getElementById('app-modal').showModal() #}
+<dialog id="app-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-display text-lg font-bold" id="app-modal-title">Confirm</h3>
+        <p class="py-3 text-base-content/80" id="app-modal-body">Are you sure?</p>
+        <div class="modal-action">
+            <form method="dialog" class="flex gap-2">
+                <button class="btn btn-ghost">Cancel</button>
+                <button class="btn btn-primary" id="app-modal-confirm">Confirm</button>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
