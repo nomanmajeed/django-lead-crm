@@ -4,8 +4,13 @@ from email_engine.models import (
     Campaign,
     CampaignRecipient,
     EmailDeliveryEvent,
+    EmailSequence,
+    EmailSuppression,
     EmailTemplate,
     OutboundEmail,
+    SequenceEnrollment,
+    SequenceStep,
+    SequenceStepSend,
 )
 
 
@@ -66,3 +71,45 @@ class CampaignRecipientAdmin(admin.ModelAdmin):
     list_display = ("campaign", "lead", "status", "updated_at")
     list_filter = ("status",)
     raw_id_fields = ("campaign", "lead", "outbound_email")
+
+
+@admin.register(EmailSuppression)
+class EmailSuppressionAdmin(admin.ModelAdmin):
+    list_display = ("email", "organisation", "reason", "created_at")
+    search_fields = ("email", "organisation__name")
+    raw_id_fields = ("organisation",)
+
+
+class SequenceStepInline(admin.TabularInline):
+    model = SequenceStep
+    extra = 0
+    raw_id_fields = ("template",)
+
+
+@admin.register(EmailSequence)
+class EmailSequenceAdmin(admin.ModelAdmin):
+    list_display = ("name", "organisation", "status", "updated_at")
+    list_filter = ("status",)
+    search_fields = ("name", "organisation__name")
+    raw_id_fields = ("organisation", "created_by")
+    inlines = [SequenceStepInline]
+
+
+@admin.register(SequenceEnrollment)
+class SequenceEnrollmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "sequence",
+        "lead",
+        "status",
+        "current_step_position",
+        "next_run_at",
+        "exit_reason",
+    )
+    list_filter = ("status", "exit_reason")
+    raw_id_fields = ("sequence", "lead")
+
+
+@admin.register(SequenceStepSend)
+class SequenceStepSendAdmin(admin.ModelAdmin):
+    list_display = ("enrollment", "step", "sent_at")
+    raw_id_fields = ("enrollment", "step", "outbound_email")

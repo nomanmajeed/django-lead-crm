@@ -18,6 +18,11 @@ from email_engine.campaign_views import (
     CampaignDetailView,
     CampaignIndexView,
 )
+from email_engine.sequence_views import (
+    SequenceCreateView,
+    SequenceDetailView,
+    SequenceIndexView,
+)
 from email_engine.template_views import (
     EmailTemplateCreateView,
     EmailTemplateDetailView,
@@ -100,6 +105,17 @@ urlpatterns = [
         "app/campaigns/<int:pk>/",
         CampaignDetailView.as_view(),
         name="campaign_detail",
+    ),
+    path("app/sequences/", SequenceIndexView.as_view(), name="sequence_index"),
+    path(
+        "app/sequences/create/",
+        SequenceCreateView.as_view(),
+        name="sequence_create",
+    ),
+    path(
+        "app/sequences/<int:pk>/",
+        SequenceDetailView.as_view(),
+        name="sequence_detail",
     ),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),

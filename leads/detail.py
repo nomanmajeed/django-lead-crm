@@ -101,6 +101,9 @@ def lead_detail(request, pk):
     done_tasks = lead.tasks.filter(completed_at__isnull=False)[:5]
     timeline = lead.activities.select_related("actor")[:40]
     custom = lead.custom_fields or {}
+    sequence_enrollments = lead.sequence_enrollments.select_related(
+        "sequence"
+    ).order_by("-enrolled_at")[:10]
 
     return render(
         request,
@@ -117,5 +120,6 @@ def lead_detail(request, pk):
             "custom_company": custom.get("company", ""),
             "custom_source": custom.get("source", ""),
             "is_agent_space": getattr(request, "product_space", None) == "agent",
+            "sequence_enrollments": sequence_enrollments,
         },
     )

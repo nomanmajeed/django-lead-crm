@@ -40,6 +40,29 @@
             </section>
 
             <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
+                <h3 class="font-semibold">Sequences</h3>
+                <ul class="space-y-2 text-sm">
+                    {% for enrollment in sequence_enrollments %}
+                    <li class="flex justify-between gap-2">
+                        <span>
+                            {% if not is_agent_space %}
+                            <a href="{% url 'sequence_detail' enrollment.sequence.pk %}" class="link link-hover font-medium">
+                                {{ enrollment.sequence.name }}
+                            </a>
+                            {% else %}
+                            <span class="font-medium">{{ enrollment.sequence.name }}</span>
+                            {% endif %}
+                            <span class="text-base-content/50">· step {{ enrollment.current_step_position }}</span>
+                        </span>
+                        <span class="badge badge-ghost badge-sm">{{ enrollment.get_status_display }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="text-base-content/60">Not enrolled in any sequence.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+
+            <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
                 <h3 class="font-semibold">Custom fields</h3>
                 <form method="post" class="space-y-3">
                     {% csrf_token %}
