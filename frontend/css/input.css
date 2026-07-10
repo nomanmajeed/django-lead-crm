@@ -1,0 +1,59 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: leadcrm --default;
+}
+
+/* Scan Django templates and JS for class names */
+@source "../../templates/**/*.html";
+@source "../js/**/*.js";
+
+@plugin "daisyui/theme" {
+  name: "leadcrm";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  /* Slate + teal CRM theme (avoid purple / cream-terracotta defaults) */
+  --color-base-100: oklch(98% 0.005 220);
+  --color-base-200: oklch(95% 0.01 220);
+  --color-base-300: oklch(90% 0.015 220);
+  --color-base-content: oklch(25% 0.02 240);
+
+  --color-primary: oklch(45% 0.1 195);
+  --color-primary-content: oklch(98% 0.01 195);
+
+  --color-secondary: oklch(40% 0.04 250);
+  --color-secondary-content: oklch(98% 0.005 250);
+
+  --color-accent: oklch(70% 0.12 75);
+  --color-accent-content: oklch(25% 0.04 75);
+
+  --color-neutral: oklch(30% 0.02 250);
+  --color-neutral-content: oklch(98% 0.005 250);
+
+  --color-info: oklch(55% 0.1 230);
+  --color-success: oklch(55% 0.12 155);
+  --color-warning: oklch(75% 0.12 85);
+  --color-error: oklch(55% 0.18 25);
+
+  --radius-selector: 0.35rem;
+  --radius-field: 0.4rem;
+  --radius-box: 0.5rem;
+}
+
+@theme {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  .font-display {
+    font-family: var(--font-display);
+  }
+}

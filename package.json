@@ -1,0 +1,13 @@
+{
+  "name": "django-lead-crm",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./frontend/css/input.css -o ./static/css/main.css --minify",
+    "watch:css": "tailwindcss -i ./frontend/css/input.css -o ./static/css/main.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.11",
+    "daisyui": "^5.0.46",
+    "tailwindcss": "^4.1.11"
+  }
+}

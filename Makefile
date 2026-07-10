@@ -1,4 +1,4 @@
-.PHONY: db-up db-down db-reset migrate run createsuperuser
+.PHONY: db-up db-down db-reset migrate run createsuperuser css css-watch
 
 db-up:
 	docker compose up -d db
@@ -18,3 +18,9 @@ run:
 
 createsuperuser:
 	.venv/bin/python manage.py createsuperuser
+
+css:
+	npm run build:css
+
+css-watch:
+	npm run watch:css

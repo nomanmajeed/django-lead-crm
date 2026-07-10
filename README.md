@@ -76,8 +76,14 @@ Docker maps container `5432` → host **`5433`** so it does not clash with a sys
 | `make migrate` | Apply Django migrations |
 | `make run` | Runserver on port 8001 |
 
-Redis is defined in `docker-compose.yml` under the `workers` profile (for later Celery work):
+## Frontend (Tailwind + DaisyUI)
+
+CSS is built from `frontend/css/input.css` into `static/css/main.css`.
 
 ```bash
-docker compose --profile workers up -d
+npm install
+make css          # production build
+make css-watch    # rebuild on change
 ```
+
+Do not use the old Tailwind CDN — templates load the built stylesheet only.
