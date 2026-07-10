@@ -97,6 +97,14 @@ class CampaignCreateView(OrganisorAndLoginRequiredMixin, View):
             campaign.created_by = request.user
             campaign.status = Campaign.Status.DRAFT
             campaign.save()
+            from audit.service import log_campaign_change
+
+            log_campaign_change(
+                campaign,
+                action="campaign.created",
+                summary=f"Created campaign “{campaign.name}”",
+                actor=request.user,
+            )
             messages.success(request, f"Draft campaign “{campaign.name}” created.")
             return redirect("campaign_detail", pk=campaign.pk)
         return render(
@@ -160,6 +168,14 @@ class CampaignDetailView(OrganisorAndLoginRequiredMixin, View):
             )
             if form.is_valid():
                 form.save()
+                from audit.service import log_campaign_change
+
+                log_campaign_change(
+                    campaign,
+                    action="campaign.updated",
+                    summary=f"Updated campaign “{campaign.name}”",
+                    actor=request.user,
+                )
                 messages.success(request, "Campaign updated.")
                 return redirect("campaign_detail", pk=pk)
             counts = recipient_counts(campaign)
@@ -224,6 +240,14 @@ class CampaignDetailView(OrganisorAndLoginRequiredMixin, View):
             Campaign.Status.CANCELLED,
         }:
             name = campaign.name
+            from audit.service import log_campaign_change
+
+            log_campaign_change(
+                campaign,
+                action="campaign.deleted",
+                summary=f"Deleted campaign “{name}”",
+                actor=request.user,
+            )
             campaign.delete()
             messages.success(request, f"Deleted “{name}”.")
             return redirect("campaign_index")

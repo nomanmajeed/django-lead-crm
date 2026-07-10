@@ -88,6 +88,7 @@
                 <li>Campaigns: {% if plan.campaigns != None %}{{ plan.campaigns }}{% else %}Unlimited{% endif %}</li>
                 <li>Sequences: {% if plan.features.sequences %}{% if plan.sequences != None %}{{ plan.sequences }}{% else %}Unlimited{% endif %}{% else %}—{% endif %}</li>
                 <li>Analytics: {% if plan.features.analytics %}Yes{% else %}—{% endif %}</li>
+                <li>Audit export: {% if plan.features.audit_export %}Yes{% else %}—{% endif %}</li>
             </ul>
             {% if plan.key != entitlements.key %}
             <form method="post">

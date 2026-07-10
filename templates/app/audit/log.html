@@ -1,0 +1,89 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Audit log · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Audit log</h2>
+            <p class="text-base-content/70 mt-1">Who changed what across leads, campaigns, and team.</p>
+        </div>
+        {% if can_export %}
+        <a
+            href="{% url 'audit_export' %}?actor={{ filters.actor }}&object_type={{ filters.object_type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}"
+            class="btn btn-outline btn-sm"
+        >Export CSV</a>
+        {% else %}
+        <a href="{% url 'billing_plans' %}" class="btn btn-ghost btn-sm">Export on Business</a>
+        {% endif %}
+    </div>
+
+    <form method="get" class="flex flex-wrap gap-3 items-end border border-base-300 rounded-box bg-base-100 p-4">
+        <label class="form-control w-40">
+            <span class="label-text text-xs">Actor</span>
+            <select name="actor" class="select select-bordered select-sm">
+                <option value="">Anyone</option>
+                {% for user in actors %}
+                <option value="{{ user.pk }}" {% if filters.actor == user.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ user.username }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="form-control w-40">
+            <span class="label-text text-xs">Object</span>
+            <select name="object_type" class="select select-bordered select-sm">
+                <option value="">All</option>
+                {% for value, label in object_types %}
+                <option value="{{ value }}" {% if filters.object_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="form-control w-40">
+            <span class="label-text text-xs">From</span>
+            <input type="date" name="date_from" value="{{ filters.date_from }}" class="input input-bordered input-sm">
+        </label>
+        <label class="form-control w-40">
+            <span class="label-text text-xs">To</span>
+            <input type="date" name="date_to" value="{{ filters.date_to }}" class="input input-bordered input-sm">
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        <a href="{% url 'audit_log' %}" class="btn btn-ghost btn-sm">Clear</a>
+    </form>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Object</th>
+                    <th>Summary</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="whitespace-nowrap text-xs">{{ entry.created_at|date:"M j, g:i A" }}</td>
+                    <td>{{ entry.actor.username|default:"—" }}</td>
+                    <td><span class="badge badge-ghost badge-sm">{{ entry.action }}</span></td>
+                    <td>
+                        <span class="text-xs text-base-content/60">{{ entry.get_object_type_display }}</span>
+                        {% if entry.object_repr %}
+                        <div>{{ entry.object_repr }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ entry.summary }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-base-content/60 py-10">No audit entries yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
