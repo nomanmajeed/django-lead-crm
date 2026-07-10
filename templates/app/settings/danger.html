@@ -1,0 +1,33 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Danger zone · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold text-error">Danger zone</h2>
+            <p class="text-base-content/70 mt-1">Owner-only. This cannot be undone.</p>
+        </div>
+        <a href="{% url 'settings_hub' %}" class="btn btn-ghost btn-sm">All settings</a>
+    </div>
+
+    <div class="border border-error/40 rounded-box bg-error/5 p-5 space-y-4">
+        <p class="text-sm">
+            Deleting <strong>{{ organisation.name }}</strong> permanently removes leads,
+            campaigns, team memberships, billing links, and audit history for this workspace.
+        </p>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <label class="form-control w-full">
+                <span class="label-text">{{ form.confirm_name.label }}</span>
+                {{ form.confirm_name }}
+                {% for error in form.confirm_name.errors %}
+                <span class="text-error text-sm">{{ error }}</span>
+                {% endfor %}
+            </label>
+            <button type="submit" class="btn btn-error">Delete organisation forever</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

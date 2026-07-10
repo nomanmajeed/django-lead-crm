@@ -54,6 +54,17 @@ class Organisation(models.Model):
         default="",
         help_text="Postal address shown in marketing email footers (CAN-SPAM).",
     )
+    from_name = models.CharField(
+        max_length=120,
+        blank=True,
+        default="",
+        help_text="Display name used in outbound From headers.",
+    )
+    from_email = models.EmailField(
+        blank=True,
+        default="",
+        help_text="Optional org From address; falls back to the platform default.",
+    )
     stripe_customer_id = models.CharField(max_length=255, blank=True, default="")
     stripe_subscription_id = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -66,6 +77,18 @@ class Organisation(models.Model):
 
     def __str__(self):
         return self.name
+
+    def resolve_from_email(self) -> str:
+        """Build From header using org identity, falling back to platform default."""
+        from django.conf import settings as django_settings
+
+        address = (self.from_email or "").strip() or getattr(
+            django_settings, "DEFAULT_FROM_EMAIL", "noreply@leadcrm.local"
+        )
+        name = (self.from_name or "").strip()
+        if name:
+            return f"{name} <{address}>"
+        return address
 
 
 class Membership(models.Model):

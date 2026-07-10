@@ -2,7 +2,6 @@ import secrets
 from datetime import timedelta
 
 from django import forms
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.forms import UsernameField
@@ -38,7 +37,7 @@ def send_invite_email(request, invite):
             f"This link expires on {invite.expires_at:%Y-%m-%d %H:%M %Z}."
         ),
         organisation=invite.organisation,
-        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@leadcrm.local"),
+        from_email=None,
     )
 
 

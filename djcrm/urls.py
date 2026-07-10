@@ -38,6 +38,11 @@ from email_engine.tracking_views import track_click, track_open, unsubscribe
 from email_engine.webhooks import email_webhook
 from leads.assignment_views import AssignmentSettingsView
 from leads.auth_views import RoleBasedLoginView
+from leads.settings_views import (
+    DangerZoneView,
+    OrganisationProfileSettingsView,
+    SettingsHubView,
+)
 from leads.invites import (
     InviteAcceptView,
     TeamInviteCreateView,
@@ -76,9 +81,29 @@ urlpatterns = [
         name="team_invite_resend",
     ),
     path(
+        "app/settings/",
+        SettingsHubView.as_view(),
+        name="settings_hub",
+    ),
+    path(
+        "app/settings/profile/",
+        OrganisationProfileSettingsView.as_view(),
+        name="settings_profile",
+    ),
+    path(
+        "app/settings/danger/",
+        DangerZoneView.as_view(),
+        name="settings_danger",
+    ),
+    path(
         "app/settings/assignment/",
         AssignmentSettingsView.as_view(),
         name="assignment_settings",
+    ),
+    path(
+        "app/settings/compliance/",
+        ComplianceSettingsView.as_view(),
+        name="compliance_settings",
     ),
     path("app/lists/", ContactListIndexView.as_view(), name="list_index"),
     path("app/lists/create/", ContactListCreateView.as_view(), name="list_create"),
@@ -128,11 +153,6 @@ urlpatterns = [
         "app/sequences/<int:pk>/",
         SequenceDetailView.as_view(),
         name="sequence_detail",
-    ),
-    path(
-        "app/settings/compliance/",
-        ComplianceSettingsView.as_view(),
-        name="compliance_settings",
     ),
     path("app/billing/", BillingPlansView.as_view(), name="billing_plans"),
     path("app/billing/usage/", BillingUsageView.as_view(), name="billing_usage"),

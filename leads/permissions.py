@@ -61,3 +61,11 @@ def user_is_agent_member(user, organisation=None):
     if organisation is not None:
         qs = qs.filter(organisation=organisation)
     return qs.exists()
+
+
+def user_is_org_owner(user, organisation=None):
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if organisation is not None:
+        return user_has_role(user, organisation, {Membership.Role.OWNER})
+    return user.memberships.filter(role=Membership.Role.OWNER).exists()

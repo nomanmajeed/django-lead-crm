@@ -1,0 +1,68 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Settings · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-3xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Settings</h2>
+        <p class="text-base-content/70 mt-1">
+            Organisation preferences for {{ organisation.name }}.
+        </p>
+    </div>
+
+    <div class="space-y-3">
+        <a href="{% url 'settings_profile' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Organisation profile</p>
+                <p class="text-sm text-base-content/60">Name, branding, timezone, email from identity</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
+        <a href="{% url 'team' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Team</p>
+                <p class="text-sm text-base-content/60">{{ member_count }} member{{ member_count|pluralize }} · invites & roles</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
+        <a href="{% url 'assignment_settings' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Assignment</p>
+                <p class="text-sm text-base-content/60">Auto-assign and round-robin</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
+        <a href="{% url 'compliance_settings' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Email compliance</p>
+                <p class="text-sm text-base-content/60">Physical address & suppression list</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
+        <a href="{% url 'billing_plans' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Billing & usage</p>
+                <p class="text-sm text-base-content/60">Plan {{ organisation.get_plan_display }} · metering</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
+        <a href="{% url 'audit_log' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Audit log</p>
+                <p class="text-sm text-base-content/60">Who changed what</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
+        {% if is_owner %}
+        <a href="{% url 'settings_danger' %}" class="flex items-center justify-between gap-4 border border-error/40 rounded-box bg-error/5 px-5 py-4 hover:bg-error/10 transition-colors">
+            <div>
+                <p class="font-semibold text-error">Danger zone</p>
+                <p class="text-sm text-base-content/60">Delete this organisation (owner only)</p>
+            </div>
+            <span class="text-error/60">→</span>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
