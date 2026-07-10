@@ -62,6 +62,13 @@
             <span class="text-base-content/40">→</span>
         </a>
         {% if is_owner %}
+        <a href="{% url 'settings_security' %}" class="flex items-center justify-between gap-4 border border-base-300 rounded-box bg-base-100 px-5 py-4 hover:bg-base-200/50 transition-colors">
+            <div>
+                <p class="font-semibold">Security</p>
+                <p class="text-sm text-base-content/60">Two-factor authentication (owner)</p>
+            </div>
+            <span class="text-base-content/40">→</span>
+        </a>
         <a href="{% url 'settings_danger' %}" class="flex items-center justify-between gap-4 border border-error/40 rounded-box bg-error/5 px-5 py-4 hover:bg-error/10 transition-colors">
             <div>
                 <p class="font-semibold text-error">Danger zone</p>
