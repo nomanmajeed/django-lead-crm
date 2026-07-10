@@ -1,21 +1,26 @@
 {% extends "base.html" %}
 {% load tailwind_filters %}
 
-{% block content %}
+{% block title %}Login · Lead CRM{% endblock %}
 
-<div class="max-w-lg mx-auto">
-    <div class="py-5 border-b border-gray-200">
-        <a href="{% url 'signup' %}" class="hover:text-blue-500 mt-3">Don't have an account?</a>
+{% block content %}
+<div class="max-w-md mx-auto py-10">
+    <div class="mb-6">
+        <h1 class="font-display text-3xl font-bold">Welcome back</h1>
+        <p class="text-base-content/70 mt-1">
+            Don't have an account?
+            <a href="{% url 'signup' %}" class="link link-primary">Sign up</a>
+        </p>
     </div>
-    <form method="post" class="mt-5">
+
+    <form method="post" class="space-y-4 bg-base-100 p-6 rounded-box border border-base-300">
         {% csrf_token %}
         {{ form|crispy }}
-        <button type="submit"
-            class="w-full text-white bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-md">Login</button>
+        <button type="submit" class="btn btn-primary w-full">Login</button>
     </form>
-    <div class="py-5 mt-5 border-t border-gray-200">
-        <a href="{% url 'reset-password' %}" class="hover:text-blue-500 mt-3">Forgot Password?</a>
-    </div>
-</div>
 
+    <p class="mt-6 text-sm text-base-content/70">
+        <a href="{% url 'reset-password' %}" class="link link-hover">Forgot password?</a>
+    </p>
+</div>
 {% endblock content %}
