@@ -13,7 +13,7 @@ from django.contrib.auth.views import (
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
-from billing.views import BillingPlansView
+from billing.views import BillingPlansView, BillingUsageView
 from billing.webhooks import stripe_webhook
 from email_engine.campaign_views import (
     CampaignCreateView,
@@ -133,6 +133,7 @@ urlpatterns = [
         name="compliance_settings",
     ),
     path("app/billing/", BillingPlansView.as_view(), name="billing_plans"),
+    path("app/billing/usage/", BillingUsageView.as_view(), name="billing_usage"),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),
     path(

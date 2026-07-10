@@ -24,43 +24,52 @@
             <button type="submit" class="btn btn-outline btn-sm">Manage subscription</button>
         </form>
         {% endif %}
+        <a href="{% url 'billing_usage' %}" class="btn btn-ghost btn-sm">Usage</a>
     </div>
 
     <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {% with m=usage.by_name %}
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
             <p class="text-sm text-base-content/60">Seats</p>
             <p class="font-display text-2xl font-bold mt-1">
-                {{ usage.seats }}{% if entitlements.seats != None %} / {{ entitlements.seats }}{% else %} / ∞{% endif %}
+                {{ m.seats.used }}{% if m.seats.limit != None %} / {{ m.seats.limit }}{% else %} / ∞{% endif %}
             </p>
         </div>
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
             <p class="text-sm text-base-content/60">Leads</p>
             <p class="font-display text-2xl font-bold mt-1">
-                {{ usage.leads }}{% if entitlements.leads != None %} / {{ entitlements.leads }}{% else %} / ∞{% endif %}
+                {{ m.leads.used }}{% if m.leads.limit != None %} / {{ m.leads.limit }}{% else %} / ∞{% endif %}
             </p>
         </div>
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
-            <p class="text-sm text-base-content/60">Emails sent (all-time*)</p>
+            <p class="text-sm text-base-content/60">Emails ({{ usage.period_label }})</p>
             <p class="font-display text-2xl font-bold mt-1">
-                {{ usage.monthly_emails }}{% if entitlements.monthly_emails != None %} / {{ entitlements.monthly_emails }}{% else %} / ∞{% endif %}
+                {{ m.monthly_emails.used }}{% if m.monthly_emails.limit != None %} / {{ m.monthly_emails.limit }}{% else %} / ∞{% endif %}
             </p>
-            <p class="text-xs text-base-content/50 mt-1">*Metering period arrives with usage ticket</p>
+            {% if m.monthly_emails.hard_blocked %}
+            <p class="text-xs text-error mt-1">Cap reached — marketing sends blocked</p>
+            {% elif m.monthly_emails.soft_warning %}
+            <p class="text-xs text-warning mt-1">Approaching monthly email limit</p>
+            {% else %}
+            <p class="text-xs text-base-content/50 mt-1">UTC calendar month · <a href="{% url 'billing_usage' %}" class="link">Usage details</a></p>
+            {% endif %}
         </div>
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
             <p class="text-sm text-base-content/60">Campaigns</p>
             <p class="font-display text-2xl font-bold mt-1">
-                {{ usage.campaigns }}{% if entitlements.campaigns != None %} / {{ entitlements.campaigns }}{% else %} / ∞{% endif %}
+                {{ m.campaigns.used }}{% if m.campaigns.limit != None %} / {{ m.campaigns.limit }}{% else %} / ∞{% endif %}
             </p>
         </div>
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
             <p class="text-sm text-base-content/60">Sequences</p>
             <p class="font-display text-2xl font-bold mt-1">
-                {{ usage.sequences }}{% if entitlements.sequences != None %} / {{ entitlements.sequences }}{% else %} / ∞{% endif %}
+                {{ m.sequences.used }}{% if m.sequences.limit != None %} / {{ m.sequences.limit }}{% else %} / ∞{% endif %}
             </p>
             {% if not entitlements.features.sequences %}
             <p class="text-xs text-warning mt-1">Not available on Free — upgrade to Pro</p>
             {% endif %}
         </div>
+        {% endwith %}
     </div>
 
     <div class="grid md:grid-cols-3 gap-4">

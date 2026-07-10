@@ -8,6 +8,7 @@ class OutboundEmail(models.Model):
         SENT = "sent", "Sent"
         FAILED = "failed", "Failed"
         SUPPRESSED = "suppressed", "Suppressed"
+        QUOTA_EXCEEDED = "quota", "Quota exceeded"
 
     organisation = models.ForeignKey(
         "leads.Organisation",

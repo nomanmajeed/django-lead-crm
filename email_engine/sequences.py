@@ -176,6 +176,9 @@ def _send_step(
     if outbound.status == OutboundEmail.Status.SUPPRESSED:
         _exit_enrollment(enrollment, SequenceEnrollment.ExitReason.UNSUBSCRIBE)
         return None
+    if outbound.status == OutboundEmail.Status.QUOTA_EXCEEDED:
+        # Do not advance; caller can retry next period.
+        return None
     send = SequenceStepSend.objects.create(
         enrollment=enrollment,
         step=step,
@@ -237,8 +240,10 @@ def advance_enrollment(enrollment: SequenceEnrollment) -> str:
     ).exists():
         sent = _send_step(enrollment, step)
         enrollment.refresh_from_db()
-        if sent is None or enrollment.status != SequenceEnrollment.Status.ACTIVE:
+        if enrollment.status != SequenceEnrollment.Status.ACTIVE:
             return f"exited:{enrollment.exit_reason or 'unsubscribe'}"
+        if sent is None:
+            return "quota_blocked"
     enrollment.current_step_position = step.position
 
     following = SequenceStep.objects.filter(
