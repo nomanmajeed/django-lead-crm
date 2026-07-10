@@ -16,7 +16,29 @@
             </p>
         </div>
         <a href="{% url 'campaign_index' %}" class="btn btn-ghost btn-sm">All campaigns</a>
+        <a href="{% url 'campaign_report' campaign.pk %}" class="btn btn-outline btn-sm">Report</a>
     </div>
+
+    {% if metrics.sent %}
+    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Open rate</p>
+            <p class="font-display text-2xl font-bold mt-1">{{ metrics.open_rate }}%</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Click rate</p>
+            <p class="font-display text-2xl font-bold mt-1">{{ metrics.click_rate }}%</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Unsubscribes</p>
+            <p class="font-display text-2xl font-bold mt-1">{{ metrics.unsubscribes }}</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Bounces</p>
+            <p class="font-display text-2xl font-bold mt-1">{{ metrics.bounces }}</p>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="grid lg:grid-cols-3 gap-4">
         <div class="border border-base-300 rounded-box bg-base-100 p-4">

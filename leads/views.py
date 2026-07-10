@@ -68,6 +68,14 @@ class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
             else Invite.objects.none()
         )
 
+        from email_engine.analytics import (
+            org_weekly_email_summary,
+            recent_campaign_reports,
+        )
+
+        email_week = org_weekly_email_summary(organisation, days=7)
+        campaign_reports = recent_campaign_reports(organisation, limit=5)
+
         context.update(
             {
                 "topbar_title": "Dashboard",
@@ -77,7 +85,9 @@ class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
                 "new_leads": new_leads,
                 "open_pipeline": open_pipeline,
                 "conversion_rate": conversion_rate,
-                "campaign_sends": 0,
+                "campaign_sends": email_week["sent"],
+                "email_week": email_week,
+                "campaign_reports": campaign_reports,
                 "unassigned_count": unassigned,
                 "is_empty": lead_count == 0 and agents.count() == 0,
                 "recent_leads": recent_leads,

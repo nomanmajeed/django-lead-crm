@@ -17,6 +17,7 @@ from email_engine.campaign_views import (
     CampaignCreateView,
     CampaignDetailView,
     CampaignIndexView,
+    CampaignReportView,
 )
 from email_engine.compliance_views import ComplianceSettingsView
 from email_engine.sequence_views import (
@@ -107,6 +108,11 @@ urlpatterns = [
         "app/campaigns/<int:pk>/",
         CampaignDetailView.as_view(),
         name="campaign_detail",
+    ),
+    path(
+        "app/campaigns/<int:pk>/report/",
+        CampaignReportView.as_view(),
+        name="campaign_report",
     ),
     path("app/sequences/", SequenceIndexView.as_view(), name="sequence_index"),
     path(

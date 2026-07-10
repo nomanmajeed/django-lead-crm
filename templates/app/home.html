@@ -9,13 +9,13 @@
             <p class="text-sm text-base-content/60">{{ organisation.name }}</p>
             <h2 class="font-display text-3xl font-bold mt-1">Dashboard</h2>
             <p class="text-base-content/70 mt-2 max-w-xl">
-                Pipeline health for your workspace. Campaign metrics light up in Phase 3.
+                Pipeline health and this week’s email performance for your workspace.
             </p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{% url 'leads:lead_create' %}" class="btn btn-primary btn-sm">Add lead</a>
-            <a href="{% url 'team_invite_create' %}" class="btn btn-outline btn-sm">Invite</a>
-            <button type="button" class="btn btn-ghost btn-sm" disabled title="Coming in Phase 3">New campaign</button>
+            <a href="{% url 'campaign_create' %}" class="btn btn-outline btn-sm">New campaign</a>
+            <a href="{% url 'team_invite_create' %}" class="btn btn-ghost btn-sm">Invite</a>
         </div>
     </div>
 
@@ -41,11 +41,67 @@
             <p class="text-xs text-base-content/50 mt-2">Category “Converted”</p>
         </div>
         <div class="border border-base-300 rounded-box bg-base-100 p-5">
-            <p class="text-sm text-base-content/60">Campaign sends</p>
-            <p class="font-display text-3xl font-bold mt-1">{{ campaign_sends }}</p>
-            <p class="text-xs text-base-content/50 mt-2">Coming in Phase 3</p>
+            <p class="text-sm text-base-content/60">Email sends (7d)</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ email_week.sent }}</p>
+            <p class="text-xs text-base-content/50 mt-2">
+                {{ email_week.open_rate }}% open · {{ email_week.click_rate }}% click
+            </p>
         </div>
     </div>
+
+    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Opens (7d)</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ email_week.opens }}</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Clicks (7d)</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ email_week.clicks }}</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Unsubscribes (7d)</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ email_week.unsubscribes }}</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Campaigns completed (7d)</p>
+            <p class="font-display text-3xl font-bold mt-1">{{ email_week.campaigns_sent }}</p>
+        </div>
+    </div>
+
+    {% if campaign_reports %}
+    <section class="border border-base-300 rounded-box bg-base-100 overflow-x-auto">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-base-300">
+            <h3 class="font-semibold">Recent campaign performance</h3>
+            <a href="{% url 'campaign_index' %}" class="link link-primary text-sm">All campaigns</a>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Campaign</th>
+                    <th>Sent</th>
+                    <th>Open</th>
+                    <th>Click</th>
+                    <th>Unsub</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in campaign_reports %}
+                <tr>
+                    <td>
+                        <a href="{% url 'campaign_report' row.campaign.pk %}" class="link link-hover font-medium">
+                            {{ row.campaign.name }}
+                        </a>
+                    </td>
+                    <td>{{ row.metrics.sent }}</td>
+                    <td>{{ row.metrics.open_rate }}%</td>
+                    <td>{{ row.metrics.click_rate }}%</td>
+                    <td>{{ row.metrics.unsubscribes }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
 
     <div class="grid lg:grid-cols-2 gap-6">
         <section class="border border-base-300 rounded-box bg-base-100">
