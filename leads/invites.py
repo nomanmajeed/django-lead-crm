@@ -6,12 +6,12 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login
 from django.contrib.auth.forms import UsernameField
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, reverse
 from django.utils import timezone
 from django.views import generic
 
 from agents.mixins import OrganisorAndLoginRequiredMixin
+from email_engine.service import queue_transactional_email
 
 from .models import Agent, Invite, Membership
 
@@ -28,17 +28,17 @@ def send_invite_email(request, invite):
     accept_url = request.build_absolute_uri(
         reverse("invite_accept", kwargs={"token": invite.token})
     )
-    send_mail(
+    queue_transactional_email(
+        to_email=invite.email,
         subject=f"You're invited to {invite.organisation.name} on Lead CRM",
-        message=(
+        body_text=(
             f"You've been invited to join {invite.organisation.name} "
             f"as {invite.get_role_display()}.\n\n"
             f"Accept the invite: {accept_url}\n\n"
             f"This link expires on {invite.expires_at:%Y-%m-%d %H:%M %Z}."
         ),
+        organisation=invite.organisation,
         from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@leadcrm.local"),
-        recipient_list=[invite.email],
-        fail_silently=False,
     )
 
 

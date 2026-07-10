@@ -11,3 +11,6 @@ ALLOWED_HOSTS = env.list(
 )
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="console")
+# Local: run Celery tasks inline so Redis is optional for day-to-day work.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
