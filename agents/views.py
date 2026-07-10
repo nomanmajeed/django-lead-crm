@@ -5,7 +5,6 @@ from django.shortcuts import reverse
 from django.views import generic
 
 from leads.models import Agent, Membership
-from leads.permissions import get_user_organisation
 
 from .forms import AgentModelForm
 from .mixins import OrganisorAndLoginRequiredMixin
@@ -15,8 +14,7 @@ class AgentListView(OrganisorAndLoginRequiredMixin, generic.ListView):
     template_name = "agents/agent_list.html"
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Agent.objects.filter(organisation=organisation)
+        return Agent.objects.for_org(self.request.organisation)
 
 
 class AgentCreateView(OrganisorAndLoginRequiredMixin, generic.CreateView):
@@ -27,7 +25,7 @@ class AgentCreateView(OrganisorAndLoginRequiredMixin, generic.CreateView):
         return reverse("agents:agent_list")
 
     def form_valid(self, form):
-        organisation = get_user_organisation(self.request.user)
+        organisation = self.request.organisation
         user = form.save(commit=False)
         user.is_agent = True
         user.is_organisor = False
@@ -54,8 +52,7 @@ class AgentDetailView(OrganisorAndLoginRequiredMixin, generic.DetailView):
     context_object_name = "agent"
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Agent.objects.filter(organisation=organisation)
+        return Agent.objects.for_org(self.request.organisation)
 
 
 class AgentUpdateView(OrganisorAndLoginRequiredMixin, generic.UpdateView):
@@ -66,8 +63,7 @@ class AgentUpdateView(OrganisorAndLoginRequiredMixin, generic.UpdateView):
         return reverse("agents:agent_list")
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Agent.objects.filter(organisation=organisation)
+        return Agent.objects.for_org(self.request.organisation)
 
 
 class AgentDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
@@ -78,5 +74,4 @@ class AgentDeleteView(OrganisorAndLoginRequiredMixin, generic.DeleteView):
         return reverse("agents:agent_list")
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Agent.objects.filter(organisation=organisation)
+        return Agent.objects.for_org(self.request.organisation)

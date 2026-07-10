@@ -3,6 +3,8 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.utils.text import slugify
 
+from .managers import TenantManager
+
 
 class User(AbstractUser):
     # Denormalized cache of Membership roles (Membership is source of truth).
@@ -90,6 +92,8 @@ class Agent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     organisation = models.ForeignKey(Organisation, on_delete=models.CASCADE)
 
+    objects = TenantManager()
+
     class Meta:
         verbose_name = "Agent"
         verbose_name_plural = "Agents"
@@ -101,6 +105,8 @@ class Agent(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=30)  # New, Contacted, Converted, Unconverted
     organisation = models.ForeignKey(Organisation, on_delete=models.CASCADE)
+
+    objects = TenantManager()
 
     class Meta:
         verbose_name = "Category"
@@ -125,6 +131,8 @@ class Lead(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     phone_number = models.CharField(max_length=20)
     email = models.EmailField()
+
+    objects = TenantManager()
 
     class Meta:
         verbose_name = "Lead"

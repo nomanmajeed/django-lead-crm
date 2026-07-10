@@ -1,24 +1,20 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.views import generic
-from django.shortcuts import render, redirect, reverse
 
 from agents.mixins import OrganisorAndLoginRequiredMixin
 
 from .decorators import user_is_organisor
 from .forms import (
-    LeadModelFrom,
-    CustomUserCreationForm,
     AssignAgentForm,
+    CustomUserCreationForm,
     LeadCategoryUpdateForm,
+    LeadModelFrom,
 )
-from .models import Lead, Category
-from .permissions import (
-    get_user_organisation,
-    user_can_manage_organisation,
-    user_is_agent_member,
-)
+from .models import Category, Lead
+from .permissions import user_can_manage_organisation, user_is_agent_member
 
 
 def landing_page(request):
@@ -28,21 +24,18 @@ def landing_page(request):
 @login_required
 def lead_list(request):
     user = request.user
-    organisation = get_user_organisation(user)
-    leads = Lead.objects.none()
-    context = {"leads": leads}
+    organisation = request.organisation
+    context = {"leads": Lead.objects.none()}
 
     if organisation and user_can_manage_organisation(user, organisation):
-        leads = Lead.objects.filter(
-            organisation=organisation, agent__isnull=False
+        context["leads"] = Lead.objects.for_org(organisation).filter(
+            agent__isnull=False
         )
-        context["leads"] = leads
-        context["unassigned_leads"] = Lead.objects.filter(
-            organisation=organisation, agent__isnull=True
+        context["unassigned_leads"] = Lead.objects.for_org(organisation).filter(
+            agent__isnull=True
         )
     elif organisation and user_is_agent_member(user, organisation):
-        context["leads"] = Lead.objects.filter(
-            organisation=organisation,
+        context["leads"] = Lead.objects.for_org(organisation).filter(
             agent__isnull=False,
             agent__user=user,
         )
@@ -52,9 +45,8 @@ def lead_list(request):
 
 @login_required
 def lead_detail(request, pk):
-    lead = Lead.objects.get(id=pk)
-    context = {"lead": lead}
-    return render(request, "leads/lead_detail.html", context)
+    lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
+    return render(request, "leads/lead_detail.html", {"lead": lead})
 
 
 class SignupView(generic.CreateView):
@@ -73,7 +65,7 @@ def lead_create(request):
         form = LeadModelFrom(request.POST)
         if form.is_valid():
             lead = form.save(commit=False)
-            lead.organisation = get_user_organisation(request.user)
+            lead.organisation = request.organisation
             lead.save()
             send_mail(
                 subject="Lead Created",
@@ -83,14 +75,13 @@ def lead_create(request):
             )
             return redirect("/leads")
 
-    context = {"form": form}
-    return render(request, "leads/lead_create.html", context)
+    return render(request, "leads/lead_create.html", {"form": form})
 
 
 @login_required
 @user_is_organisor
 def lead_update(request, pk):
-    lead = Lead.objects.get(id=pk)
+    lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
     form = LeadModelFrom(instance=lead)
 
     if request.method == "POST":
@@ -99,18 +90,17 @@ def lead_update(request, pk):
             form.save()
             return redirect("/leads")
 
-    context = {"form": form, "lead": lead}
-    return render(request, "leads/lead_update.html", context)
+    return render(request, "leads/lead_update.html", {"form": form, "lead": lead})
 
 
 @login_required
 @user_is_organisor
 def lead_delete(request, pk):
+    lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
     if request.method == "POST":
-        lead = Lead.objects.get(id=pk)
         lead.delete()
         return redirect("/leads/")
-    return render(request, "leads/lead_delete.html")
+    return render(request, "leads/lead_delete.html", {"lead": lead})
 
 
 class AssignAgentView(OrganisorAndLoginRequiredMixin, generic.FormView):
@@ -127,7 +117,10 @@ class AssignAgentView(OrganisorAndLoginRequiredMixin, generic.FormView):
 
     def form_valid(self, form):
         agent = form.cleaned_data["agent"]
-        lead = Lead.objects.get(id=self.kwargs["pk"])
+        lead = get_object_or_404(
+            Lead.objects.for_org(self.request.organisation),
+            pk=self.kwargs["pk"],
+        )
         lead.agent = agent
         lead.save()
         return super().form_valid(form)
@@ -139,16 +132,14 @@ class CategoryListView(LoginRequiredMixin, generic.ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        organisation = get_user_organisation(self.request.user)
-        queryset = Lead.objects.filter(organisation=organisation)
+        queryset = Lead.objects.for_org(self.request.organisation)
         context.update(
             {"unassigned_lead_count": queryset.filter(category__isnull=True).count()}
         )
         return context
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Category.objects.filter(organisation=organisation)
+        return Category.objects.for_org(self.request.organisation)
 
 
 class CategoryDetailView(LoginRequiredMixin, generic.DetailView):
@@ -161,8 +152,7 @@ class CategoryDetailView(LoginRequiredMixin, generic.DetailView):
         return context
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Category.objects.filter(organisation=organisation)
+        return Category.objects.for_org(self.request.organisation)
 
 
 class LeadCategoryUpdateView(LoginRequiredMixin, generic.UpdateView):
@@ -173,5 +163,4 @@ class LeadCategoryUpdateView(LoginRequiredMixin, generic.UpdateView):
         return reverse("leads:lead_detail", kwargs={"pk": self.get_object().id})
 
     def get_queryset(self):
-        organisation = get_user_organisation(self.request.user)
-        return Lead.objects.filter(organisation=organisation)
+        return Lead.objects.for_org(self.request.organisation)
