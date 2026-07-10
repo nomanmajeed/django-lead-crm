@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, UsernameField
-from .models import Lead, Agent
 
+from .models import Lead, Agent
+from .permissions import get_user_organisation
 
 User = get_user_model()
 
@@ -15,7 +16,6 @@ class CustomUserCreationForm(UserCreationForm):
 
 
 class LeadFrom(forms.Form):
-
     first_name = forms.CharField()
     last_name = forms.CharField()
     age = forms.IntegerField(min_value=0)
@@ -40,8 +40,9 @@ class AssignAgentForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop("request")
-        agents = Agent.objects.filter(organisation=request.user.organisation)
-        super(AssignAgentForm, self).__init__(*args, **kwargs)
+        organisation = get_user_organisation(request.user)
+        agents = Agent.objects.filter(organisation=organisation)
+        super().__init__(*args, **kwargs)
         self.fields["agent"].queryset = agents
 
 
@@ -49,4 +50,3 @@ class LeadCategoryUpdateForm(forms.ModelForm):
     class Meta:
         model = Lead
         fields = ("category",)
-
