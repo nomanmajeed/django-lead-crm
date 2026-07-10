@@ -43,8 +43,11 @@ def queue_transactional_email(
         from email_engine.tasks import send_outbound_email_task
 
         send_outbound_email_task.delay(outbound.pk)
+        # Eager mode mutates the row in-process; refresh so callers see final status.
+        outbound.refresh_from_db()
     else:
         deliver_outbound_email(outbound.pk)
+        outbound.refresh_from_db()
     return outbound
 
 

@@ -1,0 +1,122 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ campaign.name }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">{{ campaign.name }}</h2>
+            <p class="text-base-content/70 mt-1">
+                Status:
+                <span class="badge badge-ghost badge-sm align-middle">{{ campaign.get_status_display }}</span>
+                {% if campaign.scheduled_at %}
+                · scheduled {{ campaign.scheduled_at|date:"M j, Y H:i" }}
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'campaign_index' %}" class="btn btn-ghost btn-sm">All campaigns</a>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4">
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Audience</p>
+            <p class="font-medium mt-1">{{ campaign.contact_list.name }}</p>
+            <p class="text-sm text-base-content/60 mt-1">
+                {% if counts.total %}{{ counts.total }} recipients{% else %}~{{ preview_count }} with email{% endif %}
+            </p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Template</p>
+            <p class="font-medium mt-1">{{ campaign.template.name }}</p>
+            <p class="text-sm text-base-content/60 mt-1 truncate">{{ campaign.template.subject }}</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-4">
+            <p class="text-xs uppercase tracking-wide text-base-content/50">Delivery</p>
+            <p class="text-sm mt-1">
+                Sent {{ counts.sent }} · Failed {{ counts.failed }} · Skipped {{ counts.skipped }}
+                {% if counts.pending or counts.queued %}
+                · Pending {{ counts.pending|add:counts.queued }}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if form %}
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4 max-w-xl">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save">
+        <h3 class="font-semibold">Edit draft</h3>
+        <label class="form-control">
+            <span class="label-text">Name</span>
+            {{ form.name }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">List / segment</span>
+            {{ form.contact_list }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">Template</span>
+            {{ form.template }}
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+    </form>
+    {% endif %}
+
+    <div class="flex flex-wrap gap-2 items-end">
+        {% if campaign.can_send %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_now">
+            <button type="submit" class="btn btn-primary btn-sm">Send now</button>
+        </form>
+        <form method="post" class="flex flex-wrap gap-2 items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="schedule">
+            <label class="form-control">
+                <span class="label-text text-xs">Schedule</span>
+                <input type="datetime-local" name="scheduled_at" class="input input-bordered input-sm" required>
+            </label>
+            <button type="submit" class="btn btn-outline btn-sm">Schedule</button>
+        </form>
+        {% endif %}
+        {% if campaign.can_cancel or campaign.status == "draft" %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel">
+            <button type="submit" class="btn btn-warning btn-sm">Cancel campaign</button>
+        </form>
+        {% endif %}
+        {% if campaign.status == "draft" or campaign.status == "cancelled" %}
+        <form method="post" onsubmit="return confirm('Delete this campaign?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <button type="submit" class="btn btn-ghost btn-sm text-error">Delete</button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if recipients %}
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Lead</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in recipients %}
+                <tr>
+                    <td>{{ row.lead.first_name }} {{ row.lead.last_name }}</td>
+                    <td class="text-sm">{{ row.lead.email }}</td>
+                    <td><span class="badge badge-ghost badge-sm">{{ row.get_status_display }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -114,6 +114,9 @@ SENDGRID_API_KEY = env("SENDGRID_API_KEY", default="")
 POSTMARK_SERVER_TOKEN = env("POSTMARK_SERVER_TOKEN", default="")
 # When True, queue via Celery; local settings force eager execution.
 EMAIL_ASYNC = env.bool("EMAIL_ASYNC", default=True)
+# One-shot campaign batching / rate limiting
+CAMPAIGN_BATCH_SIZE = env.int("CAMPAIGN_BATCH_SIZE", default=25)
+CAMPAIGN_BATCH_DELAY_SECONDS = env.int("CAMPAIGN_BATCH_DELAY_SECONDS", default=1)
 
 # --- Celery / Redis ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")

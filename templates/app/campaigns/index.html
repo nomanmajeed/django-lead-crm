@@ -1,0 +1,52 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Campaigns · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Campaigns</h2>
+            <p class="text-base-content/70 mt-1">
+                One-shot email blasts to a list or segment.
+            </p>
+        </div>
+        <a href="{% url 'campaign_create' %}" class="btn btn-primary btn-sm">New campaign</a>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>List</th>
+                    <th>Template</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in campaigns %}
+                <tr>
+                    <td>
+                        <a href="{% url 'campaign_detail' item.pk %}" class="link link-hover font-medium">
+                            {{ item.name }}
+                        </a>
+                    </td>
+                    <td class="text-sm text-base-content/70">{{ item.contact_list.name }}</td>
+                    <td class="text-sm text-base-content/70">{{ item.template.name }}</td>
+                    <td>
+                        <span class="badge badge-ghost badge-sm">{{ item.get_status_display }}</span>
+                    </td>
+                    <td class="text-sm text-base-content/60">{{ item.updated_at|date:"M j, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-base-content/60 py-10">No campaigns yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
