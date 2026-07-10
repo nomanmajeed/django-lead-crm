@@ -1,3 +1,4 @@
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
@@ -13,12 +14,46 @@ from .forms import (
     LeadCategoryUpdateForm,
     LeadModelFrom,
 )
-from .models import Category, Lead
+from .models import Agent, Category, Lead
 from .permissions import user_can_manage_organisation, user_is_agent_member
 
 
 def landing_page(request):
     return render(request, "landing_page.html")
+
+
+class SignupView(generic.CreateView):
+    template_name = "registration/signup.html"
+    form_class = CustomUserCreationForm
+
+    def form_valid(self, form):
+        self.object = form.save()
+        login(self.request, self.object)
+        return redirect("app_home")
+
+
+class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
+    """Organiser home — empty-state onboarding until ticket 12 expands KPIs."""
+
+    template_name = "app/home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organisation = self.request.organisation
+        lead_count = Lead.objects.for_org(organisation).count() if organisation else 0
+        agent_count = (
+            Agent.objects.for_org(organisation).count() if organisation else 0
+        )
+        context.update(
+            {
+                "topbar_title": "Dashboard",
+                "organisation": organisation,
+                "lead_count": lead_count,
+                "agent_count": agent_count,
+                "is_empty": lead_count == 0 and agent_count == 0,
+            }
+        )
+        return context
 
 
 @login_required
@@ -47,14 +82,6 @@ def lead_list(request):
 def lead_detail(request, pk):
     lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
     return render(request, "leads/lead_detail.html", {"lead": lead})
-
-
-class SignupView(generic.CreateView):
-    template_name = "registration/signup.html"
-    form_class = CustomUserCreationForm
-
-    def get_success_url(self):
-        return reverse("login")
 
 
 @login_required

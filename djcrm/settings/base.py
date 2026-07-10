@@ -26,7 +26,7 @@ DEBUG = env("DEBUG")
 AUTH_USER_MODEL = "leads.User"
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "/leads"
+LOGIN_REDIRECT_URL = "/app/"
 LOGOUT_REDIRECT_URL = "landing_page"
 
 INSTALLED_APPS = [
