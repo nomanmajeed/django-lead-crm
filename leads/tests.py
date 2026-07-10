@@ -187,6 +187,37 @@ class SignupOnboardingTests(TestCase):
         self.assertContains(follow, "No leads yet")
 
 
+class OrganiserDashboardTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="dash_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        Lead.objects.create(
+            first_name="Pat",
+            last_name="Pipeline",
+            age=28,
+            organisation=self.organisation,
+            description="Dashboard lead",
+            phone_number="555",
+            email="pat@example.com",
+        )
+
+    def test_dashboard_shows_live_metrics(self):
+        self.client.login(username="dash_owner", password="pass12345")
+        response = self.client.get(reverse("app_home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "New leads (7d)")
+        self.assertContains(response, "Open pipeline")
+        self.assertContains(response, "Pat Pipeline")
+        self.assertContains(response, "Add lead")
+        self.assertEqual(response.context["new_leads"], 1)
+        self.assertEqual(response.context["open_pipeline"], 1)
+        self.assertEqual(response.context["campaign_sends"], 0)
+
+
 class TeamInviteTests(TestCase):
     def setUp(self):
         self.owner = User.objects.create_user(

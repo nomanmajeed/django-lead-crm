@@ -33,24 +33,54 @@ class SignupView(generic.CreateView):
 
 
 class AppHomeView(OrganisorAndLoginRequiredMixin, generic.TemplateView):
-    """Organiser home — empty-state onboarding until ticket 12 expands KPIs."""
+    """Organiser home with KPIs, activity, and quick actions."""
 
     template_name = "app/home.html"
 
     def get_context_data(self, **kwargs):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from leads.models import Invite
+
         context = super().get_context_data(**kwargs)
         organisation = self.request.organisation
-        lead_count = Lead.objects.for_org(organisation).count() if organisation else 0
-        agent_count = (
-            Agent.objects.for_org(organisation).count() if organisation else 0
+        leads = Lead.objects.for_org(organisation) if organisation else Lead.objects.none()
+        agents = (
+            Agent.objects.for_org(organisation) if organisation else Agent.objects.none()
         )
+
+        week_ago = timezone.now() - timedelta(days=7)
+        lead_count = leads.count()
+        new_leads = leads.filter(date_added__gte=week_ago).count()
+        unassigned = leads.filter(agent__isnull=True).count()
+        converted = leads.filter(category__name__iexact="converted").count()
+        open_pipeline = lead_count - converted
+        conversion_rate = (
+            round((converted / lead_count) * 100) if lead_count else 0
+        )
+        recent_leads = leads.order_by("-date_added")[:5]
+        recent_invites = (
+            Invite.objects.filter(organisation=organisation).order_by("-created_at")[:5]
+            if organisation
+            else Invite.objects.none()
+        )
+
         context.update(
             {
                 "topbar_title": "Dashboard",
                 "organisation": organisation,
                 "lead_count": lead_count,
-                "agent_count": agent_count,
-                "is_empty": lead_count == 0 and agent_count == 0,
+                "agent_count": agents.count(),
+                "new_leads": new_leads,
+                "open_pipeline": open_pipeline,
+                "conversion_rate": conversion_rate,
+                "campaign_sends": 0,
+                "unassigned_count": unassigned,
+                "is_empty": lead_count == 0 and agents.count() == 0,
+                "recent_leads": recent_leads,
+                "recent_invites": recent_invites,
             }
         )
         return context
