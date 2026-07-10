@@ -1,0 +1,18 @@
+<div class="navbar bg-base-100 border-b border-base-300 px-2 md:px-4 min-h-14">
+    <div class="flex-none lg:hidden">
+        <label for="agent-drawer" class="btn btn-ghost btn-square btn-sm" aria-label="Open menu">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </label>
+    </div>
+    <div class="flex-1">
+        <h1 class="text-base font-semibold truncate">{{ topbar_title|default:"My work" }}</h1>
+    </div>
+    <div class="flex-none gap-2">
+        {% if request.user.is_authenticated %}
+        <span class="text-sm text-base-content/70 hidden sm:inline">{{ request.user.username }}</span>
+        <a href="{% url 'logout' %}" class="btn btn-ghost btn-sm">Logout</a>
+        {% endif %}
+    </div>
+</div>

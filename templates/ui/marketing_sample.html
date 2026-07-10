@@ -1,0 +1,48 @@
+{% extends "layouts/marketing.html" %}
+{% load static %}
+
+{% block title %}Marketing shell · Lead CRM{% endblock %}
+
+{% block content %}
+<section class="py-10 md:py-16 space-y-10">
+    <div class="max-w-2xl space-y-4">
+        <p class="badge badge-outline">layouts/marketing.html</p>
+        <h1 class="font-display text-4xl md:text-5xl font-bold tracking-tight">Marketing shell</h1>
+        <p class="text-lg text-base-content/70 leading-relaxed">
+            Public pages — landing, pricing, auth — use this layout with a simple top nav and flash messages.
+        </p>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'landing_page' %}" class="btn btn-primary">View landing</a>
+            <a href="{% url 'ui_app' %}" class="btn btn-ghost">Organiser sample</a>
+            <a href="{% url 'ui_agent' %}" class="btn btn-ghost">Agent sample</a>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+        <div>
+            <h2 class="font-semibold mb-2">Badges</h2>
+            <div class="flex flex-wrap gap-2">
+                <span class="badge badge-primary">Primary</span>
+                <span class="badge badge-success">Won</span>
+                <span class="badge badge-warning">Pending</span>
+                <span class="badge badge-error">Lost</span>
+            </div>
+        </div>
+        <div>
+            <h2 class="font-semibold mb-2">Buttons</h2>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn btn-primary btn-sm">Primary</button>
+                <button type="button" class="btn btn-outline btn-sm">Outline</button>
+                <button type="button" class="btn btn-ghost btn-sm">Ghost</button>
+            </div>
+        </div>
+        <div>
+            <h2 class="font-semibold mb-2">Form field</h2>
+            <label class="form-control w-full max-w-xs">
+                <span class="label-text mb-1">Email</span>
+                <input type="email" placeholder="you@company.com" class="input input-bordered w-full" />
+            </label>
+        </div>
+    </div>
+</section>
+{% endblock %}

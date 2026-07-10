@@ -1,0 +1,10 @@
+{# Reusable empty state. Pass title, body, and optional cta_url / cta_label via include context. #}
+<div class="flex flex-col items-center justify-center text-center py-16 px-4 border border-dashed border-base-300 rounded-box bg-base-100">
+    <p class="font-display text-2xl font-semibold">{{ title|default:"Nothing here yet" }}</p>
+    {% if body %}
+    <p class="mt-2 max-w-md text-base-content/70">{{ body }}</p>
+    {% endif %}
+    {% if cta_url and cta_label %}
+    <a href="{{ cta_url }}" class="btn btn-primary mt-6">{{ cta_label }}</a>
+    {% endif %}
+</div>
