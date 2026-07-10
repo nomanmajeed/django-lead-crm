@@ -13,6 +13,12 @@ from django.contrib.auth.views import (
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
+from email_engine.template_views import (
+    EmailTemplateCreateView,
+    EmailTemplateDetailView,
+    EmailTemplateIndexView,
+)
+from email_engine.webhooks import email_webhook
 from leads.assignment_views import AssignmentSettingsView
 from leads.auth_views import RoleBasedLoginView
 from leads.invites import (
@@ -28,7 +34,6 @@ from leads.lists import (
     ContactListIndexView,
 )
 from leads.views import AgentHomeView, AppHomeView, SignupView, landing_page
-from email_engine.webhooks import email_webhook
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -64,6 +69,21 @@ urlpatterns = [
         "app/lists/<int:pk>/",
         ContactListDetailView.as_view(),
         name="list_detail",
+    ),
+    path(
+        "app/email-templates/",
+        EmailTemplateIndexView.as_view(),
+        name="email_template_index",
+    ),
+    path(
+        "app/email-templates/create/",
+        EmailTemplateCreateView.as_view(),
+        name="email_template_create",
+    ),
+    path(
+        "app/email-templates/<int:pk>/",
+        EmailTemplateDetailView.as_view(),
+        name="email_template_detail",
     ),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),
