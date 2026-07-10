@@ -18,6 +18,7 @@ from email_engine.campaign_views import (
     CampaignDetailView,
     CampaignIndexView,
 )
+from email_engine.compliance_views import ComplianceSettingsView
 from email_engine.sequence_views import (
     SequenceCreateView,
     SequenceDetailView,
@@ -28,6 +29,7 @@ from email_engine.template_views import (
     EmailTemplateDetailView,
     EmailTemplateIndexView,
 )
+from email_engine.tracking_views import track_click, track_open, unsubscribe
 from email_engine.webhooks import email_webhook
 from leads.assignment_views import AssignmentSettingsView
 from leads.auth_views import RoleBasedLoginView
@@ -117,6 +119,11 @@ urlpatterns = [
         SequenceDetailView.as_view(),
         name="sequence_detail",
     ),
+    path(
+        "app/settings/compliance/",
+        ComplianceSettingsView.as_view(),
+        name="compliance_settings",
+    ),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),
     path(
@@ -177,6 +184,9 @@ urlpatterns = [
         email_webhook,
         name="email_webhook",
     ),
+    path("t/o/<uuid:token>.gif", track_open, name="email_track_open"),
+    path("t/c/<uuid:token>/", track_click, name="email_track_click"),
+    path("t/u/<uuid:token>/", unsubscribe, name="email_unsubscribe"),
 ]
 
 if settings.DEBUG:

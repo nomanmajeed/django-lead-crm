@@ -483,3 +483,152 @@ class SequenceDripTests(TestCase):
         self.assertEqual(
             SequenceStepSend.objects.filter(enrollment=enrollment2).count(), 1
         )
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_PROVIDER="console",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    EMAIL_ASYNC=True,
+    PUBLIC_BASE_URL="http://testserver",
+)
+class EmailTrackingComplianceTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="track_owner",
+            password="pass12345",
+            email="track@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.organisation.physical_address = "1 Market St\nSF, CA 94105"
+        self.organisation.save(update_fields=["physical_address"])
+        self.template = EmailTemplate.objects.create(
+            organisation=self.organisation,
+            name="Promo",
+            subject="Deal for {{first_name}}",
+            body_html='<p>Hi {{first_name}} <a href="https://example.com/offer">Offer</a></p>',
+            body_text="Hi {{first_name}} https://example.com/offer",
+        )
+        self.contact_list = ContactList.objects.create(
+            organisation=self.organisation,
+            name="Buyers",
+            kind=ContactList.Kind.STATIC,
+        )
+        self.lead = Lead.objects.create(
+            first_name="Alex",
+            last_name="Buyer",
+            age=30,
+            organisation=self.organisation,
+            description="x",
+            phone_number="9",
+            email="alex@example.com",
+        )
+        ContactListMembership.objects.create(
+            contact_list=self.contact_list, lead=self.lead
+        )
+
+    def test_open_and_click_events_stored(self):
+        outbound = queue_transactional_email(
+            to_email="alex@example.com",
+            subject="Hi",
+            body_text="Hi",
+            body_html='<p><a href="https://example.com/x">X</a></p>',
+            organisation=self.organisation,
+            track=True,
+        )
+        self.assertEqual(outbound.status, OutboundEmail.Status.SENT)
+        self.assertTrue(outbound.tracking_enabled)
+        self.assertIsNotNone(outbound.tracking_token)
+        self.assertIn("t/o/", outbound.body_html)
+        self.assertIn("Unsubscribe", outbound.body_html)
+        self.assertIn("1 Market St", outbound.body_html)
+        self.assertIn("t/c/", outbound.body_html)
+
+        open_resp = self.client.get(
+            reverse("email_track_open", kwargs={"token": outbound.tracking_token})
+        )
+        self.assertEqual(open_resp.status_code, 200)
+        self.assertEqual(open_resp["Content-Type"], "image/gif")
+        self.assertTrue(
+            EmailDeliveryEvent.objects.filter(
+                outbound_email=outbound,
+                event_type=EmailDeliveryEvent.EventType.OPEN,
+            ).exists()
+        )
+
+        click_resp = self.client.get(
+            reverse("email_track_click", kwargs={"token": outbound.tracking_token}),
+            {"u": "https://example.com/x"},
+        )
+        self.assertEqual(click_resp.status_code, 302)
+        self.assertEqual(click_resp["Location"], "https://example.com/x")
+        self.assertTrue(
+            EmailDeliveryEvent.objects.filter(
+                outbound_email=outbound,
+                event_type=EmailDeliveryEvent.EventType.CLICK,
+            ).exists()
+        )
+
+    def test_unsubscribe_suppresses_future_campaign_sends(self):
+        from email_engine.campaigns import schedule_or_send_campaign
+        from email_engine.models import Campaign, CampaignRecipient
+        from email_engine.sequences import is_email_suppressed
+
+        outbound = queue_transactional_email(
+            to_email="alex@example.com",
+            subject="Hi",
+            body_text="Hi",
+            body_html="<p>Hi</p>",
+            organisation=self.organisation,
+            track=True,
+        )
+        unsub = self.client.post(
+            reverse("email_unsubscribe", kwargs={"token": outbound.tracking_token})
+        )
+        self.assertEqual(unsub.status_code, 200)
+        self.assertTrue(is_email_suppressed(self.organisation, "alex@example.com"))
+        self.assertTrue(
+            EmailDeliveryEvent.objects.filter(
+                outbound_email=outbound,
+                event_type=EmailDeliveryEvent.EventType.UNSUBSCRIBE,
+            ).exists()
+        )
+
+        campaign = Campaign.objects.create(
+            organisation=self.organisation,
+            name="After unsub",
+            contact_list=self.contact_list,
+            template=self.template,
+            status=Campaign.Status.DRAFT,
+        )
+        schedule_or_send_campaign(campaign, send_now=True)
+        campaign.refresh_from_db()
+        self.assertEqual(campaign.status, Campaign.Status.SENT)
+        recipient = campaign.recipients.get(lead=self.lead)
+        self.assertEqual(recipient.status, CampaignRecipient.Status.SKIPPED)
+        self.assertIn("suppress", recipient.error_message.lower())
+        # No successful marketing send after unsubscribe
+        sent_count = OutboundEmail.objects.filter(
+            organisation=self.organisation,
+            to_email="alex@example.com",
+            status=OutboundEmail.Status.SENT,
+            tracking_enabled=True,
+        ).count()
+        self.assertEqual(sent_count, 1)  # only the pre-unsub tracked email
+
+    def test_suppressed_address_never_queued(self):
+        from email_engine.sequences import suppress_email
+
+        suppress_email(self.organisation, "alex@example.com")
+        outbound = queue_transactional_email(
+            to_email="alex@example.com",
+            subject="Nope",
+            body_text="Nope",
+            body_html="<p>Nope</p>",
+            organisation=self.organisation,
+            track=True,
+            respect_suppression=True,
+        )
+        self.assertEqual(outbound.status, OutboundEmail.Status.SUPPRESSED)
+        self.assertIsNone(outbound.sent_at)

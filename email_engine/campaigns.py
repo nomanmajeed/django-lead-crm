@@ -141,6 +141,16 @@ def _send_one_recipient(recipient: CampaignRecipient) -> CampaignRecipient:
         )
         return recipient
 
+    from email_engine.sequences import is_email_suppressed
+
+    if is_email_suppressed(campaign.organisation, to_email):
+        recipient.status = CampaignRecipient.Status.SKIPPED
+        recipient.error_message = "Address suppressed"
+        recipient.save(
+            update_fields=["status", "error_message", "updated_at"]
+        )
+        return recipient
+
     context = build_merge_context(
         lead=lead, organisation=campaign.organisation
     )
@@ -153,9 +163,14 @@ def _send_one_recipient(recipient: CampaignRecipient) -> CampaignRecipient:
         ),
         body_html=render_merge(template.body_html, context),
         organisation=campaign.organisation,
+        track=True,
+        respect_suppression=True,
     )
     recipient.outbound_email = outbound
-    if outbound.status == OutboundEmail.Status.SENT:
+    if outbound.status == OutboundEmail.Status.SUPPRESSED:
+        recipient.status = CampaignRecipient.Status.SKIPPED
+        recipient.error_message = "Address suppressed"
+    elif outbound.status == OutboundEmail.Status.SENT:
         recipient.status = CampaignRecipient.Status.SENT
         recipient.error_message = ""
     elif outbound.status == OutboundEmail.Status.QUEUED:

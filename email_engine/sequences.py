@@ -8,6 +8,7 @@ from email_engine.merge import build_merge_context, render_merge
 from email_engine.models import (
     EmailSequence,
     EmailSuppression,
+    OutboundEmail,
     SequenceEnrollment,
     SequenceStep,
     SequenceStepSend,
@@ -149,8 +150,11 @@ def enroll_list(sequence: EmailSequence, contact_list, *, actor=None) -> int:
 
 def _send_step(
     enrollment: SequenceEnrollment, step: SequenceStep
-) -> SequenceStepSend:
+) -> SequenceStepSend | None:
     lead = enrollment.lead
+    if is_email_suppressed(enrollment.sequence.organisation, lead.email):
+        _exit_enrollment(enrollment, SequenceEnrollment.ExitReason.UNSUBSCRIBE)
+        return None
     context = build_merge_context(
         lead=lead, organisation=enrollment.sequence.organisation
     )
@@ -163,7 +167,12 @@ def _send_step(
         ),
         body_html=render_merge(template.body_html, context),
         organisation=enrollment.sequence.organisation,
+        track=True,
+        respect_suppression=True,
     )
+    if outbound.status == OutboundEmail.Status.SUPPRESSED:
+        _exit_enrollment(enrollment, SequenceEnrollment.ExitReason.UNSUBSCRIBE)
+        return None
     send = SequenceStepSend.objects.create(
         enrollment=enrollment,
         step=step,
@@ -223,7 +232,10 @@ def advance_enrollment(enrollment: SequenceEnrollment) -> str:
     if not SequenceStepSend.objects.filter(
         enrollment=enrollment, step=step
     ).exists():
-        _send_step(enrollment, step)
+        sent = _send_step(enrollment, step)
+        enrollment.refresh_from_db()
+        if sent is None or enrollment.status != SequenceEnrollment.Status.ACTIVE:
+            return f"exited:{enrollment.exit_reason or 'unsubscribe'}"
     enrollment.current_step_position = step.position
 
     following = SequenceStep.objects.filter(

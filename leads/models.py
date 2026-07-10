@@ -49,6 +49,11 @@ class Organisation(models.Model):
         default=0,
         help_text="Index into the org agent list for the next auto-assignment.",
     )
+    physical_address = models.TextField(
+        blank=True,
+        default="",
+        help_text="Postal address shown in marketing email footers (CAN-SPAM).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
