@@ -1,0 +1,61 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}API tokens · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-2xl">
+    <div>
+        <h2 class="font-display text-3xl font-bold">API tokens</h2>
+        <p class="text-base-content/70 mt-1">
+            Bearer tokens for <code class="text-sm">/api/v1/</code> integrations.
+            See <code class="text-sm">docs/public-api.md</code> in the repo.
+        </p>
+    </div>
+
+    {% if new_token %}
+    <div class="border border-warning/40 bg-warning/10 rounded-box p-4 space-y-2">
+        <p class="font-semibold text-sm">New token (copy now)</p>
+        <code class="block text-xs break-all bg-base-100 p-3 rounded">{{ new_token }}</code>
+        <p class="text-xs text-base-content/60">Header: <code>Authorization: Bearer &lt;token&gt;</code></p>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'api_token_create' %}" class="flex flex-wrap gap-3 items-end border border-base-300 rounded-box bg-base-100 p-4">
+        {% csrf_token %}
+        <label class="form-control grow min-w-[12rem]">
+            <span class="label-text text-xs">Token name</span>
+            {{ form.name }}
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm">Create token</button>
+    </form>
+
+    <ul class="border border-base-300 rounded-box bg-base-100 divide-y divide-base-300">
+        {% for token in tokens %}
+        <li class="px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="font-medium">{{ token.name }}</p>
+                <p class="text-xs text-base-content/60">
+                    {{ token.prefix }}… · created {{ token.created_at|date:"M j, Y" }}
+                    {% if token.revoked_at %}· <span class="text-error">revoked</span>{% elif token.last_used_at %}· last used {{ token.last_used_at|date:"M j" }}{% endif %}
+                </p>
+            </div>
+            {% if token.is_active and is_org_owner %}
+            <form method="post" action="{% url 'api_token_revoke' token.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost btn-xs text-error">Revoke</button>
+            </form>
+            {% elif token.is_active %}
+            <span class="badge badge-success badge-sm">Active</span>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li class="px-5 py-10 text-center text-base-content/60">No API tokens yet.</li>
+        {% endfor %}
+    </ul>
+
+    <p class="text-sm text-base-content/60">
+        OpenAPI schema: <a href="/api/v1/openapi.json" class="link link-primary" target="_blank" rel="noopener">/api/v1/openapi.json</a>
+        (requires Bearer token)
+    </p>
+</div>
+{% endblock %}
