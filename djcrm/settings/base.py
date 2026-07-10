@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "audit",
     "capture",
     "public_api",
+    "security",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",
@@ -60,6 +61,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "security.middleware.RateLimitMiddleware",
+    "security.middleware.SecurityHeadersMiddleware",
     "djcrm.admin_guard.AdminGuardMiddleware",
     "leads.middleware.TenantMiddleware",
     "leads.role_space.RoleSpaceMiddleware",
@@ -138,6 +141,17 @@ STRIPE_BILLING_SIMULATE = env.bool("STRIPE_BILLING_SIMULATE", default=True)
 
 CAPTURE_FORM_RATE_LIMIT = env.int("CAPTURE_FORM_RATE_LIMIT", default=20)
 CAPTURE_FORM_RATE_WINDOW = env.int("CAPTURE_FORM_RATE_WINDOW", default=3600)
+
+# --- Security ---
+AUTH_LOGIN_RATE_LIMIT = env.int("AUTH_LOGIN_RATE_LIMIT", default=20)
+AUTH_LOGIN_RATE_WINDOW = env.int("AUTH_LOGIN_RATE_WINDOW", default=900)
+AUTH_SIGNUP_RATE_LIMIT = env.int("AUTH_SIGNUP_RATE_LIMIT", default=10)
+AUTH_SIGNUP_RATE_WINDOW = env.int("AUTH_SIGNUP_RATE_WINDOW", default=3600)
+AUTH_RESET_RATE_LIMIT = env.int("AUTH_RESET_RATE_LIMIT", default=5)
+AUTH_RESET_RATE_WINDOW = env.int("AUTH_RESET_RATE_WINDOW", default=3600)
+WEBHOOK_RATE_LIMIT = env.int("WEBHOOK_RATE_LIMIT", default=200)
+WEBHOOK_RATE_WINDOW = env.int("WEBHOOK_RATE_WINDOW", default=3600)
+SECURITY_HEADERS_ENABLED = env.bool("SECURITY_HEADERS_ENABLED", default=True)
 
 # --- Observability ---
 LOG_LEVEL = env("LOG_LEVEL", default="INFO")

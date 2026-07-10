@@ -1,0 +1,78 @@
+{% extends "layouts/app.html" %}
+{% load tailwind_filters %}
+
+{% block title %}Security · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8 max-w-2xl">
+    <div>
+        <p class="text-sm text-base-content/60">
+            <a href="{% url 'settings_hub' %}" class="link link-hover">Settings</a>
+            <span class="mx-1">/</span>
+            Security
+        </p>
+        <h2 class="font-display text-3xl font-bold mt-2">Security</h2>
+        <p class="text-base-content/70 mt-1">
+            Protect your owner account with time-based one-time passwords (TOTP).
+        </p>
+    </div>
+
+    <div class="border border-base-300 rounded-box bg-base-100 p-6 space-y-4">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-semibold">Two-factor authentication</p>
+                <p class="text-sm text-base-content/60">
+                    {% if user.totp_enabled %}
+                    Enabled — a code is required at each login.
+                    {% else %}
+                    Not enabled — password only.
+                    {% endif %}
+                </p>
+            </div>
+            {% if user.totp_enabled %}
+            <span class="badge badge-success">On</span>
+            {% else %}
+            <span class="badge badge-ghost">Off</span>
+            {% endif %}
+        </div>
+
+        {% if not user.totp_enabled and not pending_secret %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="start_enable">
+            <button type="submit" class="btn btn-primary">Enable 2FA</button>
+        </form>
+        {% endif %}
+
+        {% if pending_secret and not user.totp_enabled %}
+        <div class="space-y-3 border-t border-base-300 pt-4">
+            <p class="text-sm text-base-content/70">
+                Add this account to Google Authenticator, 1Password, or another TOTP app.
+            </p>
+            <div class="bg-base-200 rounded-box p-4 font-mono text-sm break-all">
+                {{ pending_secret }}
+            </div>
+            <p class="text-xs text-base-content/50 break-all">
+                otpauth URI: {{ provisioning_uri }}
+            </p>
+            <form method="post" class="space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="confirm_enable">
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Confirm and enable</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if user.totp_enabled %}
+        <form method="post" class="space-y-3 border-t border-base-300 pt-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="disable">
+            <p class="text-sm text-base-content/70">Enter a current code to disable 2FA.</p>
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-outline btn-error">Disable 2FA</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

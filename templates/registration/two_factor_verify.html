@@ -1,0 +1,21 @@
+{% extends "layouts/marketing.html" %}
+{% load tailwind_filters %}
+
+{% block title %}Two-factor authentication · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto py-10 px-4">
+    <div class="mb-6">
+        <h1 class="font-display text-3xl font-bold">Verify your identity</h1>
+        <p class="text-base-content/70 mt-1">
+            Enter the 6-digit code from your authenticator app.
+        </p>
+    </div>
+
+    <form method="post" class="space-y-4 bg-base-100 p-6 rounded-box border border-base-300">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary w-full">Continue</button>
+    </form>
+</div>
+{% endblock content %}

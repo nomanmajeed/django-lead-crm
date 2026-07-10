@@ -10,6 +10,8 @@ class User(AbstractUser):
     # Denormalized cache of Membership roles (Membership is source of truth).
     is_organisor = models.BooleanField(default=True)
     is_agent = models.BooleanField(default=False)
+    totp_secret = models.CharField(max_length=32, blank=True, default="")
+    totp_enabled = models.BooleanField(default=False)
 
     def get_memberships(self):
         return self.memberships.select_related("organisation")

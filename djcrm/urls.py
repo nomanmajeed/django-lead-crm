@@ -57,6 +57,7 @@ from email_engine.webhooks import email_webhook
 from leads.assignment_views import AssignmentSettingsView
 from leads.auth_views import RoleBasedLoginView
 from leads.onboarding_views import OnboardingDismissView
+from security.views import SecuritySettingsView, TwoFactorVerifyView
 from leads.settings_views import (
     DangerZoneView,
     OrganisationProfileSettingsView,
@@ -145,6 +146,11 @@ urlpatterns += [
         "app/settings/compliance/",
         ComplianceSettingsView.as_view(),
         name="compliance_settings",
+    ),
+    path(
+        "app/settings/security/",
+        SecuritySettingsView.as_view(),
+        name="settings_security",
     ),
     path("app/lists/", ContactListIndexView.as_view(), name="list_index"),
     path("app/capture/", CaptureFormIndexView.as_view(), name="capture_index"),
@@ -246,6 +252,7 @@ urlpatterns += [
     ),
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", RoleBasedLoginView.as_view(), name="login"),
+    path("two-factor/", TwoFactorVerifyView.as_view(), name="two_factor_verify"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("reset-password/", PasswordResetView.as_view(), name="reset-password"),
     path(
