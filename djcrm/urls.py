@@ -23,6 +23,7 @@ from leads.invites import (
     TeamInviteRevokeView,
 )
 from leads.views import AgentHomeView, AppHomeView, SignupView, landing_page
+from email_engine.webhooks import email_webhook
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -106,6 +107,11 @@ urlpatterns = [
         "ui/agent/",
         RedirectView.as_view(pattern_name="agent_home", permanent=False),
         name="ui_agent",
+    ),
+    path(
+        "webhooks/email/<str:provider>/",
+        email_webhook,
+        name="email_webhook",
     ),
 ]
 

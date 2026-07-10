@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     # Project Apps
     "leads",
     "agents",
+    "email_engine",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",
@@ -103,3 +104,22 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "static_root"
+
+# --- Email engine ---
+# console | smtp | sendgrid | postmark
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="console")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@leadcrm.local")
+EMAIL_WEBHOOK_SECRET = env("EMAIL_WEBHOOK_SECRET", default="")
+SENDGRID_API_KEY = env("SENDGRID_API_KEY", default="")
+POSTMARK_SERVER_TOKEN = env("POSTMARK_SERVER_TOKEN", default="")
+# When True, queue via Celery; local settings force eager execution.
+EMAIL_ASYNC = env.bool("EMAIL_ASYNC", default=True)
+
+# --- Celery / Redis ---
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
