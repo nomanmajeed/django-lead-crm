@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Plans & billing · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Plans & billing</h2>
+        <p class="text-base-content/70 mt-1">
+            You’re on <span class="font-medium">{{ entitlements.label }}</span>.
+            Limits and features below apply to {{ organisation.name }}.
+        </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Seats</p>
+            <p class="font-display text-2xl font-bold mt-1">
+                {{ usage.seats }}{% if entitlements.seats != None %} / {{ entitlements.seats }}{% else %} / ∞{% endif %}
+            </p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Leads</p>
+            <p class="font-display text-2xl font-bold mt-1">
+                {{ usage.leads }}{% if entitlements.leads != None %} / {{ entitlements.leads }}{% else %} / ∞{% endif %}
+            </p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Emails sent (all-time*)</p>
+            <p class="font-display text-2xl font-bold mt-1">
+                {{ usage.monthly_emails }}{% if entitlements.monthly_emails != None %} / {{ entitlements.monthly_emails }}{% else %} / ∞{% endif %}
+            </p>
+            <p class="text-xs text-base-content/50 mt-1">*Metering period arrives with usage ticket</p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Campaigns</p>
+            <p class="font-display text-2xl font-bold mt-1">
+                {{ usage.campaigns }}{% if entitlements.campaigns != None %} / {{ entitlements.campaigns }}{% else %} / ∞{% endif %}
+            </p>
+        </div>
+        <div class="border border-base-300 rounded-box bg-base-100 p-5">
+            <p class="text-sm text-base-content/60">Sequences</p>
+            <p class="font-display text-2xl font-bold mt-1">
+                {{ usage.sequences }}{% if entitlements.sequences != None %} / {{ entitlements.sequences }}{% else %} / ∞{% endif %}
+            </p>
+            {% if not entitlements.features.sequences %}
+            <p class="text-xs text-warning mt-1">Not available on Free — upgrade to Pro</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+        {% for plan in plans %}
+        <div class="border rounded-box bg-base-100 p-5 space-y-3 {% if plan.key == entitlements.key %}border-primary{% else %}border-base-300{% endif %}">
+            <div class="flex items-center justify-between gap-2">
+                <h3 class="font-semibold text-lg">{{ plan.label }}</h3>
+                {% if plan.key == entitlements.key %}
+                <span class="badge badge-primary badge-sm">Current</span>
+                {% endif %}
+            </div>
+            <ul class="text-sm space-y-1 text-base-content/70">
+                <li>Seats: {% if plan.seats != None %}{{ plan.seats }}{% else %}Unlimited{% endif %}</li>
+                <li>Leads: {% if plan.leads != None %}{{ plan.leads }}{% else %}Unlimited{% endif %}</li>
+                <li>Monthly emails: {% if plan.monthly_emails != None %}{{ plan.monthly_emails }}{% else %}Unlimited{% endif %}</li>
+                <li>Campaigns: {% if plan.campaigns != None %}{{ plan.campaigns }}{% else %}Unlimited{% endif %}</li>
+                <li>Sequences: {% if plan.features.sequences %}{% if plan.sequences != None %}{{ plan.sequences }}{% else %}Unlimited{% endif %}{% else %}—{% endif %}</li>
+                <li>Analytics: {% if plan.features.analytics %}Yes{% else %}—{% endif %}</li>
+            </ul>
+            {% if plan.key != entitlements.key %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="plan" value="{{ plan.key }}">
+                <button type="submit" class="btn btn-outline btn-sm w-full">
+                    {% if plan.key == "free" %}Downgrade{% else %}Upgrade to {{ plan.label }}{% endif %}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

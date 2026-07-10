@@ -339,6 +339,8 @@ class SequenceDripTests(TestCase):
             is_organisor=True,
         )
         self.organisation = Organisation.objects.get(owner=self.owner)
+        self.organisation.plan = Organisation.Plan.PRO
+        self.organisation.save(update_fields=["plan"])
         self.stage_a = Category.objects.create(
             name="New", organisation=self.organisation
         )

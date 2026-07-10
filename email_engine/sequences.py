@@ -98,6 +98,9 @@ def mark_enrollment_replied(
 
 
 def enroll_lead(sequence: EmailSequence, lead, *, actor=None) -> SequenceEnrollment:
+    from billing.entitlements import require_feature
+
+    require_feature(sequence.organisation, "sequences")
     if sequence.status != EmailSequence.Status.ACTIVE:
         raise ValueError("Only active sequences accept enrollments.")
     if not sequence.steps.exists():
@@ -308,6 +311,9 @@ def cancel_enrollment(
 
 
 def activate_sequence(sequence: EmailSequence) -> EmailSequence:
+    from billing.entitlements import require_feature
+
+    require_feature(sequence.organisation, "sequences")
     if not sequence.steps.exists():
         raise ValueError("Add at least one step before activating.")
     sequence.status = EmailSequence.Status.ACTIVE

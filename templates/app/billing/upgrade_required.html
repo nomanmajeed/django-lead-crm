@@ -1,0 +1,16 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Upgrade required · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto border border-base-300 rounded-box bg-base-100 p-8 space-y-4 text-center">
+    <h2 class="font-display text-3xl font-bold">Upgrade to unlock {{ feature_label }}</h2>
+    <p class="text-base-content/70">
+        {{ message }}
+    </p>
+    <div class="flex flex-wrap justify-center gap-2 pt-2">
+        <a href="{% url 'billing_plans' %}" class="btn btn-primary btn-sm">View plans</a>
+        <a href="{% url 'app_home' %}" class="btn btn-ghost btn-sm">Back to dashboard</a>
+    </div>
+</div>
+{% endblock %}
