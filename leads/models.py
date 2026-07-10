@@ -88,6 +88,48 @@ class Membership(models.Model):
         return f"{self.user} · {self.organisation} ({self.role})"
 
 
+class Invite(models.Model):
+    class Role(models.TextChoices):
+        ADMIN = "admin", "Admin"
+        AGENT = "agent", "Agent"
+        VIEWER = "viewer", "Viewer"
+
+    organisation = models.ForeignKey(
+        Organisation,
+        on_delete=models.CASCADE,
+        related_name="invites",
+    )
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.AGENT)
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    invited_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_invites",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Invite"
+        verbose_name_plural = "Invites"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.email} → {self.organisation} ({self.role})"
+
+    @property
+    def is_pending(self):
+        return self.accepted_at is None and self.revoked_at is None
+
+    def is_usable(self):
+        from django.utils import timezone
+
+        return self.is_pending and self.expires_at > timezone.now()
+
+
 class Agent(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     organisation = models.ForeignKey(Organisation, on_delete=models.CASCADE)

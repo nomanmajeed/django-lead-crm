@@ -1,0 +1,101 @@
+{% extends "layouts/app.html" %}
+{% load tailwind_filters %}
+
+{% block title %}Team · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div>
+        <h2 class="font-display text-3xl font-bold">Team</h2>
+        <p class="text-base-content/70 mt-1">Invite teammates and manage pending invites.</p>
+    </div>
+
+    <section class="bg-base-100 border border-base-300 rounded-box p-6 max-w-xl">
+        <h3 class="font-semibold text-lg mb-4">Invite someone</h3>
+        <form method="post" action="{% url 'team_invite_create' %}" class="space-y-4">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">Send invite</button>
+        </form>
+    </section>
+
+    <section>
+        <h3 class="font-semibold text-lg mb-3">Members</h3>
+        <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membership in members %}
+                    <tr>
+                        <td>{{ membership.user.username }}</td>
+                        <td>{{ membership.user.email|default:"—" }}</td>
+                        <td><span class="badge badge-outline">{{ membership.get_role_display }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3">No members yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h3 class="font-semibold text-lg mb-3">Invites</h3>
+        <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invite in invites %}
+                    <tr>
+                        <td>{{ invite.email }}</td>
+                        <td>{{ invite.get_role_display }}</td>
+                        <td>
+                            {% if invite.accepted_at %}
+                            <span class="badge badge-success badge-sm">Accepted</span>
+                            {% elif invite.revoked_at %}
+                            <span class="badge badge-error badge-sm">Revoked</span>
+                            {% elif invite.is_usable %}
+                            <span class="badge badge-warning badge-sm">Pending</span>
+                            {% else %}
+                            <span class="badge badge-ghost badge-sm">Expired</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-sm">{{ invite.expires_at|date:"M j, Y H:i" }}</td>
+                        <td class="text-right space-x-1">
+                            {% if invite.is_pending %}
+                            <form method="post" action="{% url 'team_invite_resend' invite.pk %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-ghost btn-xs">Resend</button>
+                            </form>
+                            {% if not invite.revoked_at and not invite.accepted_at %}
+                            <form method="post" action="{% url 'team_invite_revoke' invite.pk %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-ghost btn-xs text-error">Revoke</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No invites yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -26,12 +26,40 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 from django.views.generic import TemplateView
+from leads.invites import (
+    InviteAcceptView,
+    TeamInviteCreateView,
+    TeamInviteListView,
+    TeamInviteResendView,
+    TeamInviteRevokeView,
+)
 from leads.views import AppHomeView, landing_page, SignupView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", landing_page, name="landing_page"),
     path("app/", AppHomeView.as_view(), name="app_home"),
+    path("app/team/", TeamInviteListView.as_view(), name="team"),
+    path(
+        "app/team/invites/create/",
+        TeamInviteCreateView.as_view(),
+        name="team_invite_create",
+    ),
+    path(
+        "app/team/invites/<int:pk>/revoke/",
+        TeamInviteRevokeView.as_view(),
+        name="team_invite_revoke",
+    ),
+    path(
+        "app/team/invites/<int:pk>/resend/",
+        TeamInviteResendView.as_view(),
+        name="team_invite_resend",
+    ),
+    path(
+        "invites/<str:token>/",
+        InviteAcceptView.as_view(),
+        name="invite_accept",
+    ),
     path("leads/", include("leads.urls", namespace="leads")),
     path("agents/", include("agents.urls", namespace="agents")),
     path("signup/", SignupView.as_view(), name="signup"),
