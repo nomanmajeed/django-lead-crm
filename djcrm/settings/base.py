@@ -121,6 +121,15 @@ CAMPAIGN_BATCH_DELAY_SECONDS = env.int("CAMPAIGN_BATCH_DELAY_SECONDS", default=1
 # Absolute base URL for open/click/unsubscribe links in emails
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="http://127.0.0.1:8001")
 
+# --- Stripe billing ---
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
+STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY", default="")
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
+STRIPE_PRICE_PRO = env("STRIPE_PRICE_PRO", default="")
+STRIPE_PRICE_BUSINESS = env("STRIPE_PRICE_BUSINESS", default="")
+# When True (and no Stripe secret), billing POST can set plan directly for local/dev.
+STRIPE_BILLING_SIMULATE = env.bool("STRIPE_BILLING_SIMULATE", default=True)
+
 # --- Celery / Redis ---
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)

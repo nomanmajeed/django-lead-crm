@@ -4,12 +4,26 @@
 
 {% block content %}
 <div class="space-y-8">
-    <div>
-        <h2 class="font-display text-3xl font-bold">Plans & billing</h2>
-        <p class="text-base-content/70 mt-1">
-            You’re on <span class="font-medium">{{ entitlements.label }}</span>.
-            Limits and features below apply to {{ organisation.name }}.
-        </p>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Plans & billing</h2>
+            <p class="text-base-content/70 mt-1">
+                You’re on <span class="font-medium">{{ entitlements.label }}</span>.
+                Limits and features below apply to {{ organisation.name }}.
+            </p>
+            {% if stripe_enabled %}
+            <p class="text-xs text-base-content/50 mt-1">Payments via Stripe Checkout / Customer Portal.</p>
+            {% elif stripe_simulate %}
+            <p class="text-xs text-warning mt-1">Stripe keys not set — plan changes are simulated locally.</p>
+            {% endif %}
+        </div>
+        {% if stripe_enabled and organisation.stripe_customer_id %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="portal">
+            <button type="submit" class="btn btn-outline btn-sm">Manage subscription</button>
+        </form>
+        {% endif %}
     </div>
 
     <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -69,9 +83,14 @@
             {% if plan.key != entitlements.key %}
             <form method="post">
                 {% csrf_token %}
+                <input type="hidden" name="action" value="change_plan">
                 <input type="hidden" name="plan" value="{{ plan.key }}">
                 <button type="submit" class="btn btn-outline btn-sm w-full">
-                    {% if plan.key == "free" %}Downgrade{% else %}Upgrade to {{ plan.label }}{% endif %}
+                    {% if plan.key == "free" %}
+                        {% if stripe_enabled %}Manage / cancel{% else %}Downgrade{% endif %}
+                    {% else %}
+                        {% if stripe_enabled %}Upgrade to {{ plan.label }}{% else %}Switch to {{ plan.label }}{% endif %}
+                    {% endif %}
                 </button>
             </form>
             {% endif %}

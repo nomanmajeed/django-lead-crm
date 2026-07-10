@@ -14,6 +14,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
 from billing.views import BillingPlansView
+from billing.webhooks import stripe_webhook
 from email_engine.campaign_views import (
     CampaignCreateView,
     CampaignDetailView,
@@ -192,6 +193,7 @@ urlpatterns = [
         email_webhook,
         name="email_webhook",
     ),
+    path("webhooks/stripe/", stripe_webhook, name="stripe_webhook"),
     path("t/o/<uuid:token>.gif", track_open, name="email_track_open"),
     path("t/c/<uuid:token>/", track_click, name="email_track_click"),
     path("t/u/<uuid:token>/", unsubscribe, name="email_unsubscribe"),
