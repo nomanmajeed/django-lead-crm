@@ -25,6 +25,8 @@ wheels/
 .installed.cfg
 *.egg
 
+.plans/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -70,8 +72,8 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
+# pyenv — keep .python-version tracked for this project
+# .python-version
 
 # celery beat schedule file
 celerybeat-schedule
