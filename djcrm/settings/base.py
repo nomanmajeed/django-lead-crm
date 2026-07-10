@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "leads",
     "agents",
     "email_engine",
+    "billing",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",

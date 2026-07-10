@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from agents.mixins import OrganisorAndLoginRequiredMixin
+from billing.entitlements import EntitlementDenied, require_feature, require_within_limit
+from billing.gates import feature_or_upgrade
 from email_engine.models import (
     EmailSequence,
     EmailTemplate,
@@ -86,6 +88,9 @@ def make_step_formset(organisation, *, extra=1):
 
 class SequenceIndexView(OrganisorAndLoginRequiredMixin, View):
     def get(self, request):
+        blocked = feature_or_upgrade(request, "sequences")
+        if blocked:
+            return blocked
         sequences = EmailSequence.objects.filter(
             organisation=request.organisation
         ).order_by("-created_at")
@@ -98,6 +103,9 @@ class SequenceIndexView(OrganisorAndLoginRequiredMixin, View):
 
 class SequenceCreateView(OrganisorAndLoginRequiredMixin, View):
     def get(self, request):
+        blocked = feature_or_upgrade(request, "sequences")
+        if blocked:
+            return blocked
         FormSet = make_step_formset(request.organisation, extra=3)
         formset = FormSet(
             initial=[
@@ -118,9 +126,21 @@ class SequenceCreateView(OrganisorAndLoginRequiredMixin, View):
         )
 
     def post(self, request):
+        blocked = feature_or_upgrade(request, "sequences")
+        if blocked:
+            return blocked
         form = SequenceForm(request.POST)
         FormSet = make_step_formset(request.organisation, extra=3)
         if form.is_valid():
+            try:
+                require_feature(request.organisation, "sequences")
+                current = EmailSequence.objects.filter(
+                    organisation=request.organisation
+                ).count()
+                require_within_limit(request.organisation, "sequences", current)
+            except EntitlementDenied as exc:
+                messages.error(request, exc.message)
+                return redirect("billing_plans")
             sequence = form.save(commit=False)
             sequence.organisation = request.organisation
             sequence.created_by = request.user
@@ -182,12 +202,18 @@ class SequenceDetailView(OrganisorAndLoginRequiredMixin, View):
         return ctx
 
     def get(self, request, pk):
+        blocked = feature_or_upgrade(request, "sequences")
+        if blocked:
+            return blocked
         sequence = self._get(request, pk)
         return render(
             request, "app/sequences/detail.html", self._context(request, sequence)
         )
 
     def post(self, request, pk):
+        blocked = feature_or_upgrade(request, "sequences")
+        if blocked:
+            return blocked
         sequence = self._get(request, pk)
         action = request.POST.get("action", "save")
 
@@ -211,7 +237,7 @@ class SequenceDetailView(OrganisorAndLoginRequiredMixin, View):
             try:
                 activate_sequence(sequence)
                 messages.success(request, "Sequence is now active.")
-            except ValueError as exc:
+            except (ValueError, EntitlementDenied) as exc:
                 messages.error(request, str(exc))
             return redirect("sequence_detail", pk=pk)
 

@@ -13,6 +13,7 @@ from django.contrib.auth.views import (
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
+from billing.views import BillingPlansView
 from email_engine.campaign_views import (
     CampaignCreateView,
     CampaignDetailView,
@@ -130,6 +131,7 @@ urlpatterns = [
         ComplianceSettingsView.as_view(),
         name="compliance_settings",
     ),
+    path("app/billing/", BillingPlansView.as_view(), name="billing_plans"),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),
     path(
