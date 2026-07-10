@@ -885,3 +885,31 @@ class SettingsHubTests(TestCase):
         )
         self.assertEqual(ok.status_code, 302)
         self.assertFalse(Organisation.objects.filter(pk=self.organisation.pk).exists())
+
+
+class MarketingSiteTests(TestCase):
+    def test_landing_uses_daisyui_and_signup_cta(self):
+        response = self.client.get(reverse("landing_page"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Lead CRM")
+        self.assertContains(response, reverse("signup"))
+        self.assertContains(response, 'data-theme="leadcrm"', html=False)
+
+    def test_pricing_matches_free_pro_business(self):
+        response = self.client.get(reverse("marketing_pricing"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Free")
+        self.assertContains(response, "Pro")
+        self.assertContains(response, "Business")
+        self.assertContains(response, "100")  # free leads
+        self.assertContains(response, "5000")  # pro leads
+        self.assertContains(response, "Not included")  # free sequences
+        self.assertContains(response, reverse("signup"))
+
+    def test_features_and_signup_links(self):
+        response = self.client.get(reverse("marketing_features"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pipeline")
+        self.assertContains(response, reverse("signup"))
+        signup = self.client.get(reverse("signup"))
+        self.assertEqual(signup.status_code, 200)
