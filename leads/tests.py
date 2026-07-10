@@ -375,3 +375,83 @@ class AgentDashboardTests(TestCase):
         self.assertEqual(response.url, reverse("agent_home"))
         self.mine.refresh_from_db()
         self.assertEqual(self.mine.category_id, self.category.pk)
+
+
+class PipelineTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="pipe_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.other_owner = User.objects.create_user(
+            username="pipe_other",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.other_org = Organisation.objects.get(owner=self.other_owner)
+        self.lead = Lead.objects.create(
+            first_name="Pipe",
+            last_name="Lead",
+            age=25,
+            organisation=self.organisation,
+            description="In pipeline",
+            phone_number="100",
+            email="pipe@example.com",
+        )
+        Lead.objects.create(
+            first_name="Secret",
+            last_name="Lead",
+            age=40,
+            organisation=self.other_org,
+            description="Other org",
+            phone_number="200",
+            email="secret@example.com",
+        )
+
+    def test_pipeline_seeds_stages_and_shows_org_leads(self):
+        self.client.login(username="pipe_owner", password="pass12345")
+        response = self.client.get(reverse("leads:pipeline"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pipe Lead")
+        self.assertNotContains(response, "Secret Lead")
+        self.assertContains(response, "Qualified")
+        self.assertTrue(
+            Category.objects.for_org(self.organisation)
+            .filter(name="New")
+            .exists()
+        )
+
+    def test_pipeline_list_view_and_search_filter(self):
+        self.client.login(username="pipe_owner", password="pass12345")
+        response = self.client.get(
+            reverse("leads:pipeline"), {"view": "list", "q": "Pipe"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["view_mode"], "list")
+        self.assertContains(response, "Pipe Lead")
+        response = self.client.get(
+            reverse("leads:pipeline"), {"view": "list", "q": "zzzz"}
+        )
+        self.assertNotContains(response, "Pipe Lead")
+
+    def test_pipeline_stage_move_stays_org_scoped(self):
+        self.client.login(username="pipe_owner", password="pass12345")
+        self.client.get(reverse("leads:pipeline"))
+        won = Category.objects.for_org(self.organisation).get(name="Won")
+        response = self.client.post(
+            reverse("leads:pipeline"),
+            {"lead_id": self.lead.pk, "category_id": won.pk},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.lead.refresh_from_db()
+        self.assertEqual(self.lead.category_id, won.pk)
+
+        # Cannot move another org's lead
+        foreign = Lead.objects.get(email="secret@example.com")
+        response = self.client.post(
+            reverse("leads:pipeline"),
+            {"lead_id": foreign.pk, "category_id": won.pk},
+        )
+        self.assertEqual(response.status_code, 404)

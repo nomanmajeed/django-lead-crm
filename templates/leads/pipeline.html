@@ -1,0 +1,148 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Pipeline · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Pipeline</h2>
+            <p class="text-base-content/70 mt-1">
+                {{ lead_count }} lead{{ lead_count|pluralize }} · board and list stay in sync
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <div class="join">
+                <a href="?view=board{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.agent %}&agent={{ filters.agent }}{% endif %}{% if filters.stage %}&stage={{ filters.stage }}{% endif %}"
+                   class="btn btn-sm join-item {% if view_mode == 'board' %}btn-primary{% else %}btn-outline{% endif %}">Board</a>
+                <a href="?view=list{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.agent %}&agent={{ filters.agent }}{% endif %}{% if filters.stage %}&stage={{ filters.stage }}{% endif %}"
+                   class="btn btn-sm join-item {% if view_mode == 'list' %}btn-primary{% else %}btn-outline{% endif %}">List</a>
+            </div>
+            <a href="{% url 'leads:lead_create' %}" class="btn btn-primary btn-sm">Add lead</a>
+        </div>
+    </div>
+
+    <form method="get" class="flex flex-wrap gap-2 items-end border border-base-300 rounded-box bg-base-100 p-4">
+        <input type="hidden" name="view" value="{{ view_mode }}">
+        <label class="form-control">
+            <span class="label-text text-xs">Search</span>
+            <input type="search" name="q" value="{{ filters.q }}" placeholder="Name, email, phone"
+                   class="input input-bordered input-sm w-52">
+        </label>
+        <label class="form-control">
+            <span class="label-text text-xs">Agent</span>
+            <select name="agent" class="select select-bordered select-sm">
+                <option value="">All agents</option>
+                <option value="unassigned" {% if filters.agent == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                {% for agent in agents %}
+                <option value="{{ agent.pk }}" {% if filters.agent == agent.pk|stringformat:'s' %}selected{% endif %}>
+                    {{ agent.user.username }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="form-control">
+            <span class="label-text text-xs">Stage</span>
+            <select name="stage" class="select select-bordered select-sm">
+                <option value="">All stages</option>
+                <option value="uncategorized" {% if filters.stage == 'uncategorized' %}selected{% endif %}>Uncategorized</option>
+                {% for category in categories %}
+                <option value="{{ category.pk }}" {% if filters.stage == category.pk|stringformat:'s' %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+        <a href="{% url 'leads:pipeline' %}?view={{ view_mode }}" class="btn btn-ghost btn-sm">Clear</a>
+    </form>
+
+    {% if view_mode == 'board' %}
+    <div class="flex gap-4 overflow-x-auto pb-4">
+        {% for column_id, column_name, column_leads in columns %}
+        <section class="min-w-64 w-64 shrink-0 border border-base-300 rounded-box bg-base-100 flex flex-col max-h-[70vh]">
+            <header class="px-3 py-3 border-b border-base-300 flex items-center justify-between gap-2">
+                <h3 class="font-semibold text-sm">{{ column_name }}</h3>
+                <span class="badge badge-ghost badge-sm">{{ column_leads|length }}</span>
+            </header>
+            <ul class="p-2 space-y-2 overflow-y-auto flex-1">
+                {% for lead in column_leads %}
+                <li class="border border-base-300 rounded-box bg-base-200/40 p-3 space-y-2">
+                    <a href="{% url 'leads:lead_detail' lead.pk %}" class="font-medium link link-hover text-sm">
+                        {{ lead.first_name }} {{ lead.last_name }}
+                    </a>
+                    <p class="text-xs text-base-content/60 truncate">{{ lead.email }}</p>
+                    <p class="text-xs text-base-content/50">
+                        {% if lead.agent %}{{ lead.agent.user.username }}{% else %}Unassigned{% endif %}
+                    </p>
+                    <form method="post" action="?{{ request.GET.urlencode }}" class="pt-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="lead_id" value="{{ lead.pk }}">
+                        <select name="category_id" class="select select-bordered select-xs w-full"
+                                onchange="this.form.submit()">
+                            <option value="uncategorized" {% if not lead.category_id %}selected{% endif %}>Uncategorized</option>
+                            {% for category in categories %}
+                            <option value="{{ category.pk }}" {% if lead.category_id == category.pk %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </li>
+                {% empty %}
+                <li class="text-xs text-base-content/50 px-2 py-6 text-center">No leads</li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Agent</th>
+                    <th>Stage</th>
+                    <th>Added</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr>
+                    <td>
+                        <a href="{% url 'leads:lead_detail' lead.pk %}" class="link link-hover font-medium">
+                            {{ lead.first_name }} {{ lead.last_name }}
+                        </a>
+                    </td>
+                    <td>{{ lead.email }}</td>
+                    <td>{% if lead.agent %}{{ lead.agent.user.username }}{% else %}—{% endif %}</td>
+                    <td>
+                        <form method="post" action="?{{ request.GET.urlencode }}" class="flex items-center gap-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="lead_id" value="{{ lead.pk }}">
+                            <select name="category_id" class="select select-bordered select-xs"
+                                    onchange="this.form.submit()">
+                                <option value="uncategorized" {% if not lead.category_id %}selected{% endif %}>Uncategorized</option>
+                                {% for category in categories %}
+                                <option value="{{ category.pk }}" {% if lead.category_id == category.pk %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </td>
+                    <td class="text-sm text-base-content/60">{{ lead.date_added|date:"M j, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-base-content/60 py-10">No leads match these filters.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
