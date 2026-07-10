@@ -267,6 +267,61 @@ def record_lead_activity(lead, *, kind, summary, actor=None):
     )
 
 
+class ContactList(models.Model):
+    class Kind(models.TextChoices):
+        STATIC = "static", "Static list"
+        SEGMENT = "segment", "Dynamic segment"
+
+    organisation = models.ForeignKey(
+        Organisation, on_delete=models.CASCADE, related_name="contact_lists"
+    )
+    name = models.CharField(max_length=120)
+    kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.STATIC)
+    # Segment filters: date_added_days, stage, source, tag
+    filters = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organisation", "name"],
+                name="uniq_contact_list_org_name",
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_segment(self):
+        return self.kind == self.Kind.SEGMENT
+
+
+class ContactListMembership(models.Model):
+    contact_list = models.ForeignKey(
+        ContactList, on_delete=models.CASCADE, related_name="memberships"
+    )
+    lead = models.ForeignKey(
+        Lead, on_delete=models.CASCADE, related_name="list_memberships"
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["contact_list", "lead"],
+                name="uniq_contact_list_lead",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.lead} in {self.contact_list}"
+
+
 def unique_org_slug(base: str, exclude_pk=None) -> str:
     slug = base or "organisation"
     candidate = slug

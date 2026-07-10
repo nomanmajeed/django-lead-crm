@@ -1,0 +1,46 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Lists · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Lists &amp; segments</h2>
+            <p class="text-base-content/70 mt-1">
+                Static lists and dynamic segments for campaign targeting.
+            </p>
+        </div>
+        <a href="{% url 'list_create' %}" class="btn btn-primary btn-sm">New list</a>
+    </div>
+
+    <div class="overflow-x-auto border border-base-300 rounded-box bg-base-100">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Members</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>
+                        <a href="{% url 'list_detail' row.list.pk %}" class="link link-hover font-medium">
+                            {{ row.list.name }}
+                        </a>
+                    </td>
+                    <td>{{ row.list.get_kind_display }}</td>
+                    <td>{{ row.member_count }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-base-content/60 py-10">No lists yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

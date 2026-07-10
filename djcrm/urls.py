@@ -22,6 +22,11 @@ from leads.invites import (
     TeamInviteResendView,
     TeamInviteRevokeView,
 )
+from leads.lists import (
+    ContactListCreateView,
+    ContactListDetailView,
+    ContactListIndexView,
+)
 from leads.views import AgentHomeView, AppHomeView, SignupView, landing_page
 from email_engine.webhooks import email_webhook
 
@@ -52,6 +57,13 @@ urlpatterns = [
         "app/settings/assignment/",
         AssignmentSettingsView.as_view(),
         name="assignment_settings",
+    ),
+    path("app/lists/", ContactListIndexView.as_view(), name="list_index"),
+    path("app/lists/create/", ContactListCreateView.as_view(), name="list_create"),
+    path(
+        "app/lists/<int:pk>/",
+        ContactListDetailView.as_view(),
+        name="list_detail",
     ),
     # Agent workspace
     path("agent/", AgentHomeView.as_view(), name="agent_home"),

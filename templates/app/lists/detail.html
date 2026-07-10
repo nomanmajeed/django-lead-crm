@@ -1,0 +1,66 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ contact_list.name }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm text-base-content/60">{{ contact_list.get_kind_display }}</p>
+            <h2 class="font-display text-3xl font-bold mt-1">{{ contact_list.name }}</h2>
+            <p class="text-base-content/70 mt-2">
+                Preview: <strong>{{ member_count }}</strong> member{{ member_count|pluralize }}
+                {% if contact_list.is_segment %}
+                · filters: {{ contact_list.filters }}
+                {% endif %}
+            </p>
+        </div>
+        <a href="{% url 'list_index' %}" class="btn btn-ghost btn-sm">All lists</a>
+    </div>
+
+    {% if contact_list.kind == 'static' %}
+    <section class="border border-base-300 rounded-box bg-base-100 p-5 space-y-3">
+        <h3 class="font-semibold">Add lead</h3>
+        <form method="post" class="flex flex-wrap gap-2 items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <select name="lead_id" class="select select-bordered select-sm min-w-64" required>
+                <option value="">Choose a lead…</option>
+                {% for lead in available_leads %}
+                <option value="{{ lead.pk }}">{{ lead.first_name }} {{ lead.last_name }} · {{ lead.email }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </form>
+    </section>
+    {% endif %}
+
+    <section class="border border-base-300 rounded-box bg-base-100">
+        <div class="px-5 py-4 border-b border-base-300">
+            <h3 class="font-semibold">Members (showing up to 50)</h3>
+        </div>
+        <ul class="divide-y divide-base-300">
+            {% for lead in members %}
+            <li class="px-5 py-3 flex items-center justify-between gap-3">
+                <div>
+                    <a href="{% url 'leads:lead_detail' lead.pk %}" class="font-medium link link-hover">
+                        {{ lead.first_name }} {{ lead.last_name }}
+                    </a>
+                    <p class="text-xs text-base-content/60">{{ lead.email }} · {{ lead.date_added|date:"M j, Y" }}</p>
+                </div>
+                {% if contact_list.kind == 'static' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="lead_id" value="{{ lead.pk }}">
+                    <button type="submit" class="btn btn-ghost btn-xs">Remove</button>
+                </form>
+                {% endif %}
+            </li>
+            {% empty %}
+            <li class="px-5 py-8 text-center text-base-content/60">No members match right now.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

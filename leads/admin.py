@@ -3,6 +3,8 @@ from django.contrib import admin
 from .models import (
     Agent,
     Category,
+    ContactList,
+    ContactListMembership,
     Invite,
     Lead,
     LeadActivity,
@@ -77,6 +79,20 @@ class LeadActivityAdmin(admin.ModelAdmin):
     list_display = ("summary", "kind", "lead", "actor", "created_at")
     list_filter = ("kind",)
     raw_id_fields = ("lead", "actor")
+
+
+@admin.register(ContactList)
+class ContactListAdmin(admin.ModelAdmin):
+    list_display = ("name", "kind", "organisation", "updated_at")
+    list_filter = ("kind",)
+    search_fields = ("name", "organisation__name")
+    raw_id_fields = ("organisation",)
+
+
+@admin.register(ContactListMembership)
+class ContactListMembershipAdmin(admin.ModelAdmin):
+    list_display = ("contact_list", "lead", "added_at")
+    raw_id_fields = ("contact_list", "lead")
 
 
 admin.site.register(Agent)

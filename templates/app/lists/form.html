@@ -1,0 +1,49 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ heading }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-xl space-y-6">
+    <div>
+        <h2 class="font-display text-3xl font-bold">{{ heading }}</h2>
+        <p class="text-base-content/70 mt-2">
+            Segments recompute membership from filters. Static lists are curated manually.
+        </p>
+    </div>
+
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <label class="form-control">
+            <span class="label-text">Name</span>
+            {{ form.name }}
+            {{ form.name.errors }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">Type</span>
+            {{ form.kind }}
+        </label>
+        <div class="divider text-xs">Segment filters (ignored for static lists)</div>
+        <label class="form-control">
+            <span class="label-text">{{ form.date_added_days.label }}</span>
+            {{ form.date_added_days }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">{{ form.stage.label }}</span>
+            {{ form.stage }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">{{ form.source.label }}</span>
+            {{ form.source }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">{{ form.tag.label }}</span>
+            {{ form.tag }}
+        </label>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <a href="{% url 'list_index' %}" class="btn btn-ghost btn-sm">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
