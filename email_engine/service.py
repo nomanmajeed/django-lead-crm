@@ -39,7 +39,7 @@ def queue_transactional_email(
             return OutboundEmail.objects.create(
                 organisation=organisation,
                 to_email=to_email,
-                from_email=from_email or default_from_email(),
+                from_email=from_email or default_from_email(organisation),
                 subject=subject,
                 body_text=body_text,
                 body_html=body_html,
@@ -60,7 +60,7 @@ def queue_transactional_email(
             return OutboundEmail.objects.create(
                 organisation=organisation,
                 to_email=to_email,
-                from_email=from_email or default_from_email(),
+                from_email=from_email or default_from_email(organisation),
                 subject=subject,
                 body_text=body_text,
                 body_html=body_html,
@@ -74,7 +74,7 @@ def queue_transactional_email(
     outbound = OutboundEmail.objects.create(
         organisation=organisation,
         to_email=to_email,
-        from_email=from_email or default_from_email(),
+        from_email=from_email or default_from_email(organisation),
         subject=subject,
         body_text=body_text,
         body_html=body_html,

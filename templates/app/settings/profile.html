@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Organisation profile · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-xl">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">Organisation profile</h2>
+            <p class="text-base-content/70 mt-1">Branding and outbound email identity.</p>
+        </div>
+        <a href="{% url 'settings_hub' %}" class="btn btn-ghost btn-sm">All settings</a>
+    </div>
+
+    <form method="post" class="space-y-4 border border-base-300 rounded-box bg-base-100 p-5">
+        {% csrf_token %}
+        {% for field in form %}
+        <label class="form-control w-full">
+            <span class="label-text">{{ field.label }}</span>
+            {{ field }}
+            {% if field.help_text %}
+            <span class="label-text-alt text-base-content/50">{{ field.help_text }}</span>
+            {% endif %}
+            {% for error in field.errors %}
+            <span class="text-error text-sm">{{ error }}</span>
+            {% endfor %}
+        </label>
+        {% endfor %}
+        <div class="pt-2">
+            <button type="submit" class="btn btn-primary">Save profile</button>
+        </div>
+    </form>
+
+    <p class="text-sm text-base-content/60">
+        Preview From header:
+        <span class="font-mono text-base-content">{{ organisation.resolve_from_email }}</span>
+    </p>
+</div>
+{% endblock %}

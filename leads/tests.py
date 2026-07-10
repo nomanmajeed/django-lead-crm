@@ -801,3 +801,87 @@ class ContactListSegmentTests(TestCase):
         )
         detail = self.client.get(reverse("list_detail", kwargs={"pk": contact_list.pk}))
         self.assertEqual(detail.context["member_count"], 1)
+
+
+class SettingsHubTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="settings_owner",
+            password="pass12345",
+            email="settings@example.com",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.admin_user = User.objects.create_user(
+            username="settings_admin",
+            password="pass12345",
+            is_organisor=False,
+            is_agent=False,
+        )
+        Membership.objects.create(
+            user=self.admin_user,
+            organisation=self.organisation,
+            role=Membership.Role.ADMIN,
+        )
+        # Keep denormalized flag consistent with membership
+        self.admin_user.is_organisor = True
+        self.admin_user.save(update_fields=["is_organisor"])
+
+    def test_profile_persists_and_applies_to_email_from(self):
+        from email_engine.service import queue_transactional_email
+
+        self.client.login(username="settings_owner", password="pass12345")
+        response = self.client.post(
+            reverse("settings_profile"),
+            {
+                "name": "Acme CRM",
+                "timezone": "Asia/Karachi",
+                "primary_color": "#124E77",
+                "from_name": "Acme Sales",
+                "from_email": "hello@acme.example",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.organisation.refresh_from_db()
+        self.assertEqual(self.organisation.name, "Acme CRM")
+        self.assertEqual(self.organisation.timezone, "Asia/Karachi")
+        self.assertEqual(self.organisation.primary_color, "#124E77")
+        self.assertEqual(
+            self.organisation.resolve_from_email(),
+            "Acme Sales <hello@acme.example>",
+        )
+
+        outbound = queue_transactional_email(
+            to_email="lead@example.com",
+            subject="Hi",
+            body_text="Hi",
+            organisation=self.organisation,
+            async_send=False,
+        )
+        self.assertEqual(outbound.from_email, "Acme Sales <hello@acme.example>")
+
+        hub = self.client.get(reverse("settings_hub"))
+        self.assertEqual(hub.status_code, 200)
+        self.assertContains(hub, "Organisation profile")
+        self.assertContains(hub, "Danger zone")
+
+    def test_danger_zone_owner_only_and_deletes_org(self):
+        self.client.login(username="settings_admin", password="pass12345")
+        blocked = self.client.get(reverse("settings_danger"))
+        self.assertEqual(blocked.status_code, 302)
+        self.assertEqual(blocked.url, reverse("settings_hub"))
+
+        self.client.login(username="settings_owner", password="pass12345")
+        bad = self.client.post(
+            reverse("settings_danger"),
+            {"confirm_name": "Wrong Name"},
+        )
+        self.assertEqual(bad.status_code, 200)
+        self.assertTrue(Organisation.objects.filter(pk=self.organisation.pk).exists())
+
+        ok = self.client.post(
+            reverse("settings_danger"),
+            {"confirm_name": self.organisation.name},
+        )
+        self.assertEqual(ok.status_code, 302)
+        self.assertFalse(Organisation.objects.filter(pk=self.organisation.pk).exists())

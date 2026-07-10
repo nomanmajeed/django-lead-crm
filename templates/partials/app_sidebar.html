@@ -1,6 +1,7 @@
 <aside class="bg-base-100 text-base-content min-h-full w-64 border-r border-base-300">
     <div class="p-4 border-b border-base-300">
-        <a href="{% url 'app_home' %}" class="font-display text-lg font-bold tracking-tight">Lead CRM</a>
+        <a href="{% url 'app_home' %}" class="font-display text-lg font-bold tracking-tight"
+           {% if current_organisation and current_organisation.primary_color %}style="color: {{ current_organisation.primary_color }}"{% endif %}>Lead CRM</a>
         <p class="text-xs text-base-content/60 mt-1">
             {% if current_organisation %}{{ current_organisation.name }}{% else %}Organiser{% endif %}
         </p>
@@ -16,12 +17,7 @@
         <li><a href="{% url 'sequence_index' %}">Sequences</a></li>
         <li><a href="{% url 'agents:agent_list' %}">Agents</a></li>
         <li><a href="{% url 'team' %}">Team</a></li>
-        <li><a href="{% url 'assignment_settings' %}">Assignment</a></li>
-        <li><a href="{% url 'compliance_settings' %}">Compliance</a></li>
-        <li><a href="{% url 'audit_log' %}">Audit log</a></li>
-        <li><a href="{% url 'billing_plans' %}">Billing</a></li>
-        <li><a href="{% url 'billing_usage' %}">Usage</a></li>
-        <li><a class="opacity-50 pointer-events-none">Settings</a></li>
+        <li><a href="{% url 'settings_hub' %}">Settings</a></li>
         {% if is_agent_member %}
         <li class="mt-2 pt-2 border-t border-base-300">
             <a href="{% url 'agent_home' %}">Switch to agent</a>

@@ -71,7 +71,9 @@ class EmailDeliveryEvent(models.Model):
         return f"{self.event_type} ({self.provider})"
 
 
-def default_from_email():
+def default_from_email(organisation=None):
+    if organisation is not None and hasattr(organisation, "resolve_from_email"):
+        return organisation.resolve_from_email()
     return getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@leadcrm.local")
 
 
