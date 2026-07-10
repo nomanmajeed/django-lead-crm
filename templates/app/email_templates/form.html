@@ -1,0 +1,42 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ heading }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+    <div>
+        <h2 class="font-display text-3xl font-bold">{{ heading }}</h2>
+        <p class="text-base-content/70 mt-2">
+            Merge tags:
+            {% for example in merge_tag_examples %}
+            <code class="text-xs bg-base-200 px-1 rounded">{{ example }}</code>{% if not forloop.last %} {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+
+    <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <label class="form-control">
+            <span class="label-text">Name</span>
+            {{ form.name }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">Subject</span>
+            {{ form.subject }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">HTML body</span>
+            {{ form.body_html }}
+        </label>
+        <label class="form-control">
+            <span class="label-text">Plain text (optional)</span>
+            {{ form.body_text }}
+        </label>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <a href="{% url 'email_template_index' %}" class="btn btn-ghost btn-sm">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

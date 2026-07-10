@@ -1,0 +1,77 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}{{ template.name }} · Lead CRM{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 class="font-display text-3xl font-bold">{{ template.name }}</h2>
+            <p class="text-base-content/70 mt-1">Edit, preview, or send a test to yourself.</p>
+        </div>
+        <a href="{% url 'email_template_index' %}" class="btn btn-ghost btn-sm">All templates</a>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <form method="post" class="border border-base-300 rounded-box bg-base-100 p-5 space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save">
+            <label class="form-control">
+                <span class="label-text">Name</span>
+                {{ form.name }}
+            </label>
+            <label class="form-control">
+                <span class="label-text">Subject</span>
+                {{ form.subject }}
+            </label>
+            <label class="form-control">
+                <span class="label-text">HTML body</span>
+                {{ form.body_html }}
+            </label>
+            <label class="form-control">
+                <span class="label-text">Plain text</span>
+                {{ form.body_text }}
+            </label>
+            <p class="text-xs text-base-content/50">
+                Tags:
+                {% for example in merge_tag_examples %}
+                <code>{{ example }}</code>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="submit" name="action" value="test_send" class="btn btn-outline btn-sm">
+                    Test send to me
+                </button>
+                <button type="submit" name="action" value="delete" class="btn btn-ghost btn-sm text-error"
+                        onclick="return confirm('Delete this template?')">Delete</button>
+            </div>
+        </form>
+
+        <section class="border border-base-300 rounded-box bg-base-100 overflow-hidden">
+            <div class="px-5 py-4 border-b border-base-300">
+                <h3 class="font-semibold">Preview</h3>
+                <p class="text-xs text-base-content/60 mt-1">
+                    {% if sample_lead %}
+                    Using lead {{ sample_lead.first_name }} {{ sample_lead.last_name }}
+                    {% else %}
+                    Using your account as sample data
+                    {% endif %}
+                </p>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <p class="text-xs text-base-content/50 uppercase tracking-wide">Subject</p>
+                    <p class="font-medium mt-1">{{ preview_subject }}</p>
+                </div>
+                <div class="border border-base-300 rounded-box bg-base-200/40 p-4 prose max-w-none">
+                    {{ preview_html|safe }}
+                </div>
+                {% if preview_text %}
+                <pre class="text-xs bg-base-200 p-3 rounded-box whitespace-pre-wrap">{{ preview_text }}</pre>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

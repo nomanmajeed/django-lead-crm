@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from email_engine.models import EmailDeliveryEvent, OutboundEmail
+from email_engine.models import EmailDeliveryEvent, EmailTemplate, OutboundEmail
 
 
 @admin.register(OutboundEmail)
@@ -30,3 +30,10 @@ class EmailDeliveryEventAdmin(admin.ModelAdmin):
     )
     list_filter = ("event_type", "provider")
     search_fields = ("provider_message_id",)
+
+
+@admin.register(EmailTemplate)
+class EmailTemplateAdmin(admin.ModelAdmin):
+    list_display = ("name", "organisation", "subject", "updated_at")
+    search_fields = ("name", "subject", "organisation__name")
+    raw_id_fields = ("organisation",)

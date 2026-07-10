@@ -68,3 +68,34 @@ class EmailDeliveryEvent(models.Model):
 
 def default_from_email():
     return getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@leadcrm.local")
+
+
+class EmailTemplate(models.Model):
+    organisation = models.ForeignKey(
+        "leads.Organisation",
+        on_delete=models.CASCADE,
+        related_name="email_templates",
+    )
+    name = models.CharField(max_length=120)
+    subject = models.CharField(max_length=255)
+    body_html = models.TextField(
+        help_text="HTML body. Use merge tags like {{first_name}}."
+    )
+    body_text = models.TextField(
+        blank=True,
+        help_text="Optional plain-text fallback.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organisation", "name"],
+                name="uniq_email_template_org_name",
+            )
+        ]
+
+    def __str__(self):
+        return self.name
