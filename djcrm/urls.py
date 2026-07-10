@@ -20,6 +20,18 @@ from capture.views import (
     CaptureFormIndexView,
     PublicCaptureView,
 )
+from public_api.api_views import (
+    CampaignDetailAPI,
+    CampaignListCreateAPI,
+    LeadDetailAPI,
+    LeadListCreateAPI,
+    OpenAPISchemaView,
+)
+from public_api.token_views import (
+    APITokenCreateView,
+    APITokenIndexView,
+    APITokenRevokeView,
+)
 from notifications.views import NotificationInboxView
 from billing.views import BillingPlansView, BillingUsageView
 from billing.webhooks import stripe_webhook
@@ -71,6 +83,16 @@ urlpatterns = [
     path("features/", MarketingFeaturesView.as_view(), name="marketing_features"),
     path("pricing/", MarketingPricingView.as_view(), name="marketing_pricing"),
     path("f/<uuid:public_key>/", PublicCaptureView.as_view(), name="public_capture"),
+    # Public API v1
+    path("api/v1/openapi.json", OpenAPISchemaView.as_view(), name="api_openapi"),
+    path("api/v1/leads/", LeadListCreateAPI.as_view(), name="api_leads"),
+    path("api/v1/leads/<int:pk>/", LeadDetailAPI.as_view(), name="api_lead_detail"),
+    path("api/v1/campaigns/", CampaignListCreateAPI.as_view(), name="api_campaigns"),
+    path(
+        "api/v1/campaigns/<int:pk>/",
+        CampaignDetailAPI.as_view(),
+        name="api_campaign_detail",
+    ),
     # Organiser app space
     path("app/", AppHomeView.as_view(), name="app_home"),
     path(
@@ -181,6 +203,13 @@ urlpatterns = [
     path("app/billing/usage/", BillingUsageView.as_view(), name="billing_usage"),
     path("app/audit/", AuditLogView.as_view(), name="audit_log"),
     path("app/audit/export/", AuditExportView.as_view(), name="audit_export"),
+    path("app/api/tokens/", APITokenIndexView.as_view(), name="api_tokens"),
+    path("app/api/tokens/create/", APITokenCreateView.as_view(), name="api_token_create"),
+    path(
+        "app/api/tokens/<int:pk>/revoke/",
+        APITokenRevokeView.as_view(),
+        name="api_token_revoke",
+    ),
     path(
         "app/notifications/",
         NotificationInboxView.as_view(),

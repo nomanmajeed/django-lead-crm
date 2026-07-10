@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "notifications",
     "audit",
     "capture",
+    "public_api",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",
