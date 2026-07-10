@@ -18,6 +18,9 @@
                 <a href="?view=list{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.agent %}&agent={{ filters.agent }}{% endif %}{% if filters.stage %}&stage={{ filters.stage }}{% endif %}"
                    class="btn btn-sm join-item {% if view_mode == 'list' %}btn-primary{% else %}btn-outline{% endif %}">List</a>
             </div>
+            <a href="{% url 'leads:lead_import' %}" class="btn btn-outline btn-sm">Import</a>
+            <a href="{% url 'leads:lead_export' %}?q={{ filters.q|urlencode }}&agent={{ filters.agent }}&stage={{ filters.stage }}"
+               class="btn btn-outline btn-sm">Export</a>
             <a href="{% url 'leads:lead_create' %}" class="btn btn-primary btn-sm">Add lead</a>
         </div>
     </div>

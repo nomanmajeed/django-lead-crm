@@ -542,3 +542,87 @@ class LeadDetail360Tests(TestCase):
                 lead=self.lead, kind=LeadActivity.Kind.TASK_COMPLETED
             ).exists()
         )
+
+
+class LeadImportExportTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="io_owner",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.organisation = Organisation.objects.get(owner=self.owner)
+        self.other = User.objects.create_user(
+            username="io_other",
+            password="pass12345",
+            is_organisor=True,
+        )
+        self.other_org = Organisation.objects.get(owner=self.other)
+
+    def test_import_100_rows_into_correct_org_and_skips_bad_rows(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        lines = ["first_name,last_name,email,phone_number,age,description"]
+        for i in range(100):
+            lines.append(
+                f"First{i},Last{i},user{i}@example.com,555{i:04d},30,Imported {i}"
+            )
+        lines.append(",,,,not-an-age,")  # bad row — missing required + bad age
+        csv_bytes = ("\n".join(lines) + "\n").encode("utf-8")
+        upload = SimpleUploadedFile("leads.csv", csv_bytes, content_type="text/csv")
+
+        self.client.login(username="io_owner", password="pass12345")
+        response = self.client.post(
+            reverse("leads:lead_import"),
+            {"action": "upload", "csv_file": upload},
+        )
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(
+            reverse("leads:lead_import"),
+            {
+                "action": "import",
+                "map_first_name": "first_name",
+                "map_last_name": "last_name",
+                "map_email": "email",
+                "map_phone_number": "phone_number",
+                "map_age": "age",
+                "map_description": "description",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Lead.objects.for_org(self.organisation).count(), 100
+        )
+        self.assertEqual(Lead.objects.for_org(self.other_org).count(), 0)
+        self.assertContains(response, "100 leads imported")
+        self.assertContains(response, "1 row skipped")
+
+    def test_export_matches_pipeline_filters(self):
+        Lead.objects.create(
+            first_name="Keep",
+            last_name="Me",
+            age=20,
+            organisation=self.organisation,
+            description="match",
+            phone_number="1",
+            email="keep@example.com",
+        )
+        Lead.objects.create(
+            first_name="Drop",
+            last_name="Me",
+            age=21,
+            organisation=self.organisation,
+            description="other",
+            phone_number="2",
+            email="drop@example.com",
+        )
+        self.client.login(username="io_owner", password="pass12345")
+        response = self.client.get(
+            reverse("leads:lead_export"), {"q": "keep@example.com"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+        body = response.content.decode("utf-8")
+        self.assertIn("keep@example.com", body)
+        self.assertNotIn("drop@example.com", body)
