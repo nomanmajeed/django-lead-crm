@@ -1,3 +1,4 @@
-username: noman
-email:""
-pass: noman1234
+# This file previously held local login credentials and must not be committed.
+# Use a local superuser instead:
+#   make createsuperuser
+# See README.md and .env.example for environment setup.
