@@ -5,8 +5,15 @@ from django.utils.text import slugify
 
 
 class User(AbstractUser):
+    # Denormalized cache of Membership roles (Membership is source of truth).
     is_organisor = models.BooleanField(default=True)
     is_agent = models.BooleanField(default=False)
+
+    def get_memberships(self):
+        return self.memberships.select_related("organisation")
+
+    def membership_for(self, organisation):
+        return self.memberships.filter(organisation=organisation).first()
 
 
 class Organisation(models.Model):
@@ -20,7 +27,7 @@ class Organisation(models.Model):
     owner = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name="organisation",
+        related_name="owned_organisation",
     )
     name = models.CharField(max_length=120)
     slug = models.SlugField(max_length=140, unique=True)
@@ -42,6 +49,41 @@ class Organisation(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Membership(models.Model):
+    class Role(models.TextChoices):
+        OWNER = "owner", "Owner"
+        ADMIN = "admin", "Admin"
+        AGENT = "agent", "Agent"
+        VIEWER = "viewer", "Viewer"
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="memberships",
+    )
+    organisation = models.ForeignKey(
+        Organisation,
+        on_delete=models.CASCADE,
+        related_name="memberships",
+    )
+    role = models.CharField(max_length=20, choices=Role.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Membership"
+        verbose_name_plural = "Memberships"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "organisation"],
+                name="uniq_membership_user_organisation",
+            )
+        ]
+        ordering = ["organisation__name", "user__username"]
+
+    def __str__(self):
+        return f"{self.user} · {self.organisation} ({self.role})"
 
 
 class Agent(models.Model):
@@ -103,14 +145,43 @@ def _unique_org_slug(base: str) -> str:
 
 
 def post_user_created_signal(sender, instance, created, **kwargs):
-    if not created:
+    """New organisers get an Organisation + Owner membership. Agents do not."""
+    if not created or not instance.is_organisor:
         return
+
     base_slug = slugify(instance.username) or f"user-{instance.pk}"
-    Organisation.objects.create(
+    organisation = Organisation.objects.create(
         owner=instance,
         name=f"{instance.get_username()}'s organisation",
         slug=_unique_org_slug(base_slug),
     )
+    Membership.objects.create(
+        user=instance,
+        organisation=organisation,
+        role=Membership.Role.OWNER,
+    )
+
+
+def sync_user_role_flags(sender, instance, **kwargs):
+    """Keep denormalized User.is_organisor / is_agent in sync with Membership."""
+    user = instance.user
+    roles = set(
+        Membership.objects.filter(user=user).values_list("role", flat=True)
+    )
+    is_organisor = bool(
+        roles
+        & {
+            Membership.Role.OWNER,
+            Membership.Role.ADMIN,
+        }
+    )
+    is_agent = Membership.Role.AGENT in roles
+    if user.is_organisor != is_organisor or user.is_agent != is_agent:
+        User.objects.filter(pk=user.pk).update(
+            is_organisor=is_organisor,
+            is_agent=is_agent,
+        )
 
 
 post_save.connect(post_user_created_signal, sender=User)
+post_save.connect(sync_user_role_flags, sender=Membership)
