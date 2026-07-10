@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "email_engine",
     "billing",
     "notifications",
+    "audit",
     # Third party apps
     "crispy_forms",
     "crispy_tailwind",

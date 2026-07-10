@@ -104,6 +104,17 @@ def accept_invite_for_user(invite, user):
     from notifications.service import notify_invite_accepted
 
     notify_invite_accepted(invite, user)
+    from audit.service import log_team_change
+
+    log_team_change(
+        invite.organisation,
+        action="team.invite_accepted",
+        summary=f"{user.username} accepted invite as {invite.get_role_display()}",
+        actor=user,
+        object_id=invite.pk,
+        object_repr=invite.email,
+        role=invite.role,
+    )
 
 
 class TeamInviteListView(OrganisorAndLoginRequiredMixin, generic.ListView):
@@ -145,6 +156,17 @@ class TeamInviteCreateView(OrganisorAndLoginRequiredMixin, generic.View):
         invite.expires_at = timezone.now() + timedelta(days=INVITE_TTL_DAYS)
         invite.save()
         send_invite_email(request, invite)
+        from audit.service import log_team_change
+
+        log_team_change(
+            request.organisation,
+            action="team.invite_created",
+            summary=f"Invited {invite.email} as {invite.get_role_display()}",
+            actor=request.user,
+            object_id=invite.pk,
+            object_repr=invite.email,
+            role=invite.role,
+        )
         messages.success(request, f"Invite sent to {invite.email}.")
         return redirect("team")
 
@@ -160,6 +182,16 @@ class TeamInviteRevokeView(OrganisorAndLoginRequiredMixin, generic.View):
         )
         invite.revoked_at = timezone.now()
         invite.save(update_fields=["revoked_at"])
+        from audit.service import log_team_change
+
+        log_team_change(
+            request.organisation,
+            action="team.invite_revoked",
+            summary=f"Revoked invite to {invite.email}",
+            actor=request.user,
+            object_id=invite.pk,
+            object_repr=invite.email,
+        )
         messages.success(request, f"Invite to {invite.email} revoked.")
         return redirect("team")
 

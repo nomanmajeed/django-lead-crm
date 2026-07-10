@@ -54,6 +54,14 @@ def cancel_campaign(campaign: Campaign) -> Campaign:
         error_message="Campaign cancelled",
         updated_at=timezone.now(),
     )
+    from audit.service import log_campaign_change
+
+    log_campaign_change(
+        campaign,
+        action="campaign.cancelled",
+        summary=f"Cancelled campaign “{campaign.name}”",
+        actor=campaign.created_by,
+    )
     return campaign
 
 
@@ -109,6 +117,14 @@ def schedule_or_send_campaign(
                 "updated_at",
             ]
         )
+        from audit.service import log_campaign_change
+
+        log_campaign_change(
+            campaign,
+            action="campaign.sent",
+            summary=f"Started sending “{campaign.name}”",
+            actor=campaign.created_by,
+        )
         _enqueue(send_immediately=True)
         return campaign
 
@@ -124,6 +140,14 @@ def schedule_or_send_campaign(
             "completed_at",
             "updated_at",
         ]
+    )
+    from audit.service import log_campaign_change
+
+    log_campaign_change(
+        campaign,
+        action="campaign.scheduled",
+        summary=f"Scheduled “{campaign.name}”",
+        actor=campaign.created_by,
     )
     _enqueue(send_immediately=False, eta=scheduled_at)
     return campaign
@@ -303,3 +327,11 @@ def _finalize_if_done(campaign: Campaign) -> None:
         from notifications.service import notify_campaign_finished
 
         notify_campaign_finished(campaign)
+        from audit.service import log_campaign_change
+
+        log_campaign_change(
+            campaign,
+            action="campaign.completed",
+            summary=f"Finished sending “{campaign.name}”",
+            actor=campaign.created_by,
+        )

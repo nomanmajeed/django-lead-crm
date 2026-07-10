@@ -52,6 +52,16 @@ def maybe_auto_assign(lead, *, actor=None):
     from notifications.service import notify_assignment
 
     notify_assignment(lead, agent, actor=actor)
+    from audit.service import log_lead_change
+
+    log_lead_change(
+        lead,
+        action="lead.assigned",
+        summary=f"Auto-assigned to {agent.user.username}",
+        actor=actor,
+        agent_id=agent.pk,
+        auto=True,
+    )
     return lead
 
 
@@ -68,4 +78,13 @@ def assign_lead_to_agent(lead, agent, *, actor=None):
     from notifications.service import notify_assignment
 
     notify_assignment(lead, agent, actor=actor)
+    from audit.service import log_lead_change
+
+    log_lead_change(
+        lead,
+        action="lead.assigned",
+        summary=f"Assigned to {agent.user.username}",
+        actor=actor,
+        agent_id=agent.pk,
+    )
     return lead

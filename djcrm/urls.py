@@ -13,6 +13,7 @@ from django.contrib.auth.views import (
 from django.urls import include, path
 from django.views.generic import RedirectView, TemplateView
 
+from audit.views import AuditExportView, AuditLogView
 from notifications.views import NotificationInboxView
 from billing.views import BillingPlansView, BillingUsageView
 from billing.webhooks import stripe_webhook
@@ -135,6 +136,8 @@ urlpatterns = [
     ),
     path("app/billing/", BillingPlansView.as_view(), name="billing_plans"),
     path("app/billing/usage/", BillingUsageView.as_view(), name="billing_usage"),
+    path("app/audit/", AuditLogView.as_view(), name="audit_log"),
+    path("app/audit/export/", AuditExportView.as_view(), name="audit_export"),
     path(
         "app/notifications/",
         NotificationInboxView.as_view(),

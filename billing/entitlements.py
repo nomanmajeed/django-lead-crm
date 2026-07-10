@@ -58,6 +58,7 @@ PLAN_CATALOG: dict[str, PlanEntitlements] = {
             "sequences": False,
             "analytics": False,
             "assignment_rules": True,
+            "audit_export": False,
         },
     ),
     Organisation.Plan.PRO: PlanEntitlements(
@@ -73,6 +74,7 @@ PLAN_CATALOG: dict[str, PlanEntitlements] = {
             "sequences": True,
             "analytics": True,
             "assignment_rules": True,
+            "audit_export": False,
         },
     ),
     Organisation.Plan.BUSINESS: PlanEntitlements(
@@ -88,6 +90,7 @@ PLAN_CATALOG: dict[str, PlanEntitlements] = {
             "sequences": True,
             "analytics": True,
             "assignment_rules": True,
+            "audit_export": True,
         },
     ),
 }

@@ -227,6 +227,14 @@ def lead_create(request):
             lead.organisation = request.organisation
             lead.save()
             maybe_auto_assign(lead, actor=request.user)
+            from audit.service import log_lead_change
+
+            log_lead_change(
+                lead,
+                action="lead.created",
+                summary=f"Created lead {lead.first_name} {lead.last_name}",
+                actor=request.user,
+            )
             send_mail(
                 subject="Lead Created",
                 message="Visit homepage to see new lead",
@@ -250,6 +258,14 @@ def lead_update(request, pk):
         )
         if form.is_valid():
             form.save()
+            from audit.service import log_lead_change
+
+            log_lead_change(
+                lead,
+                action="lead.updated",
+                summary=f"Updated lead {lead.first_name} {lead.last_name}",
+                actor=request.user,
+            )
             return redirect(reverse("leads:lead_list"))
 
     return render(request, "leads/lead_update.html", {"form": form, "lead": lead})
@@ -260,6 +276,14 @@ def lead_update(request, pk):
 def lead_delete(request, pk):
     lead = get_object_or_404(Lead.objects.for_org(request.organisation), pk=pk)
     if request.method == "POST":
+        from audit.service import log_lead_change
+
+        log_lead_change(
+            lead,
+            action="lead.deleted",
+            summary=f"Deleted lead {lead.first_name} {lead.last_name}",
+            actor=request.user,
+        )
         lead.delete()
         return redirect(reverse("leads:lead_list"))
     return render(request, "leads/lead_delete.html", {"lead": lead})
